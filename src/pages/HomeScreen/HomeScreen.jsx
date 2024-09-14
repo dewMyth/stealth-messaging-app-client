@@ -1,11 +1,14 @@
 // HomeScreen.js
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import "./HomeScreen.css";
 import Conversation from "../../components/Conversation/Conversation";
 import Message from "../../components/Message/Message";
 import WelcomeMessage from "../../components/WelcomeMessage/WelcomeMessage";
+import { AuthContext } from "../../context/AuthContext";
 
 const HomeScreen = () => {
+  const { user } = useContext(AuthContext);
+
   const [isUnlocked, setIsUnlocked] = useState(false);
   const createConvModalRef = useRef(null);
   // const [createConvUser, setCreateConvUser] = useState("");
@@ -70,10 +73,11 @@ const HomeScreen = () => {
   return (
     <div>
       {/* Header */}
+
       <div>
         <header className="header bg-dark text-white">
           <div
-            className="header-wrapper d-flex align-items-center"
+            className="header-wrapper d-flex align-items-center justify-content-between"
             style={{ height: "40px" }}
           >
             <span
@@ -90,11 +94,26 @@ const HomeScreen = () => {
               >
                 mark_unread_chat_alt
               </span>
-              <span className="px-2">Stealth Messaging App</span>
+              <span className="px-2">
+                Stealth Messaging App ( {user.userName} )
+              </span>
             </span>
+
+            <button
+              className="btn btn-sm me-3"
+              style={{
+                color: "white",
+                fontFamily: "Noto Sans",
+                fontSize: "14px",
+                fontWeight: "bold",
+              }}
+            >
+              <span class="material-symbols-outlined">logout</span>
+            </button>
           </div>
         </header>
       </div>
+
       {/* Header */}
       <div className="home-screen">
         <div className="chatMenu">

@@ -1,9 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import "./VerifyUser.css";
+import { useVerifyUser } from "../../hooks/useUserData";
+import { useNavigate } from "react-router-dom";
 
 export default function VerifyCode() {
   const [code, setCode] = useState(new Array(6).fill(""));
-  const userEmail = "youremailAddress@gmail.com"; // This can be dynamic
+
+  const location = useLocation();
+
+  const navigate = useNavigate();
+  const { email } = location.state || {};
 
   const handleChange = (e, index) => {
     const { value } = e.target;
@@ -17,10 +24,35 @@ export default function VerifyCode() {
     }
   };
 
+  const {
+    mutate: verifyUserMutate,
+    isLoading: verifyUserLoading,
+    isError: isVerifyUserError,
+    isSuccess: isVerifyUserSuccess,
+    error: verifyUserError,
+  } = useVerifyUser();
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Code submitted:", code.join(""));
+
+    let constructedCode = code.join("");
+
+    if (!email || !constructedCode) {
+      alert("Please provide an email address and a valid code.");
+      return;
+    }
+
+    verifyUserMutate({ email: email, verificationCode: constructedCode });
   };
+
+  // useEffect to handle successful submission and navigation
+  useEffect(() => {
+    if (isVerifyUserSuccess) {
+      alert("User verified successfully.");
+      navigate(`/login`);
+    }
+  }, [isVerifyUserSuccess, navigate]);
 
   return (
     <div className="main-container">
@@ -54,8 +86,8 @@ export default function VerifyCode() {
         <div className="verify-form">
           <h2 className="form-title">Verify Code</h2>
           <p className="form-description">
-            A six-digit code has been sent to <strong>{userEmail}</strong>.
-            Please enter it below.
+            A six-digit code has been sent to <strong>{email}</strong>. Please
+            enter it below.
           </p>
           <form onSubmit={handleSubmit}>
             <div className="code-inputs mb-3">
