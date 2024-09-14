@@ -29,7 +29,7 @@ export default function Message({ own, type, text, attributes, isActive }) {
       }
       case "SELF_DESTRUCT_TIMED": {
         setEmoji(
-          <span class="material-symbols-outlined" style={iconStyle}>
+          <span className="material-symbols-outlined" style={iconStyle}>
             timer
           </span>
         );
@@ -37,7 +37,7 @@ export default function Message({ own, type, text, attributes, isActive }) {
       }
       case "LIMITED_VIEW_TIME": {
         setEmoji(
-          <span class="material-symbols-outlined" style={iconStyle}>
+          <span className="material-symbols-outlined" style={iconStyle}>
             disabled_visible
           </span>
         );

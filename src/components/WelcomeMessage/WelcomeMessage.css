@@ -1,0 +1,22 @@
+.container {
+    display: flex;
+    align-items: center;
+    /* Vertically center */
+    justify-content: center;
+    vertical-align: middle;
+    /* Horizontally center */
+    height: 100%;
+    /* Full viewport height */
+    /* Optional: background color for visibility */
+}
+
+.text-container {
+    text-align: center;
+    /* Center text horizontally within the container */
+}
+
+p {
+    margin: 0;
+    padding: 5px;
+    font-size: 16px;
+}

@@ -1,9 +1,9 @@
 import React from "react";
 import "./Conversation.css";
 
-export default function Conversation({ isOnline }) {
+export default function Conversation({ isOnline, onClick }) {
   return (
-    <div className="conversation">
+    <div className="conversation" onClick={onClick}>
       <img
         className="conversationImg"
         src="https://amreckenya.org/wp-content/uploads/2020/11/403022_business-man_male_user_avatar_profile_icon-1.png"
