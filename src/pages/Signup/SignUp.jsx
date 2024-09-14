@@ -1,13 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./SignUp.css";
+import { useAddUser } from "../../hooks/useUserData";
+import { useNavigate } from "react-router-dom";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
     email: "",
-    username: "",
+    userName: "",
     password: "",
     confirmPassword: "",
   });
+
+  const navigate = useNavigate();
+
+  const {
+    mutate: addUserMutate,
+    isLoading: isAddUserLoading,
+    isError: isAddUserError,
+    isSuccess: isAddUserSuccess,
+    error: addUserError,
+  } = useAddUser();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,7 +32,23 @@ export default function SignUp() {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Form submitted:", formData);
+
+    if (!formData) {
+      alert("All fields are required");
+      return;
+    }
+
+    addUserMutate(formData);
   };
+
+  // useEffect to handle successful submission and navigation
+  useEffect(() => {
+    if (isAddUserSuccess) {
+      navigate("/verify-user", {
+        state: { email: formData.email },
+      });
+    }
+  }, [isAddUserSuccess, navigate, formData.email]);
 
   return (
     <div className="main-container">
@@ -70,16 +98,16 @@ export default function SignUp() {
               />
             </div>
             <div className="mb-3">
-              <label htmlFor="username" className="form-label">
+              <label htmlFor="userName" className="form-label">
                 Username
               </label>
               <input
                 type="text"
                 className="form-control"
-                id="username"
-                name="username"
+                id="userName"
+                name="userName"
                 placeholder="Enter your username"
-                value={formData.username}
+                value={formData.userName}
                 onChange={handleChange}
                 required
               />
@@ -115,8 +143,14 @@ export default function SignUp() {
               />
             </div>
             <button type="submit" className="sendBtn w-100">
-              Sign Up
+              {isAddUserLoading ? "Creating..." : "Sign Up"}
             </button>
+            <br />
+            {isAddUserError && (
+              <div className="alert alert-danger" role="alert">
+                Error! Please try again!
+              </div>
+            )}
           </form>
         </div>
       </div>

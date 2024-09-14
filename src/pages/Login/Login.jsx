@@ -1,11 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import "./Login.css";
+import { useLoginUser } from "../../hooks/useUserData";
+import { AuthContext } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const navigate = useNavigate();
+
+  const { isFetching, error, dispatch } = useContext(AuthContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -15,10 +22,36 @@ export default function Login() {
     });
   };
 
+  const {
+    mutate: loginUserMutate,
+    isLoading: isLoginUserLoading,
+    isError: isLoginUserError,
+    isSuccess: isLoginUserSuccess,
+    data: loginUserData,
+    error: loginUserError,
+  } = useLoginUser();
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Form submitted:", formData);
+
+    if (!formData) {
+      alert("Please fill in all fields.");
+      return;
+    }
+
+    dispatch({ type: "LOGIN_START" });
+    loginUserMutate(formData);
+    console.log(loginUserData);
   };
+
+  useEffect(() => {
+    if (isLoginUserSuccess) {
+      dispatch({ type: "LOGIN_SUCCESS", payload: loginUserData?.user });
+      localStorage.setItem("user", JSON.stringify(loginUserData?.user));
+      window.location.reload();
+    }
+  }, [isLoginUserSuccess]);
 
   return (
     <div className="main-container">
