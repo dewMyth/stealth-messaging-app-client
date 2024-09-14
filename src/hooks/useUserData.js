@@ -1,4 +1,4 @@
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 // const queryClient = useQueryClient();
@@ -58,5 +58,22 @@ export const useLoginUser = () => {
         throw err.message; // re-throw the error
       }
     },
+  });
+};
+
+const getUserById = async (userId) => {
+  const response = await axios.get(baseUrl + `users/get-user-by-id/${userId}`, {
+    userId,
+  });
+  return response.data;
+};
+
+export const useGetUserById = (userId) => {
+  return useQuery({
+    queryKey: ["getUserById", userId],
+    queryFn: () => getUserById(userId),
+    staleTime: 1000 * 60 * 5, // 5 minutes stale time
+    // refetchInterval: 1000 * 60 * 15, // 15 minutes refetch interval
+    enabled: !!userId,
   });
 };

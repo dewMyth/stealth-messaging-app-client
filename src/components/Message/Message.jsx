@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import "./Message.css";
+import { formatEpochToDate } from "../../utils";
 
-export default function Message({ own, type, text, attributes, isActive }) {
+export default function Message({ own, message }) {
+  const { text, isActive, messageType } = message;
+  const { messageFunc, funcAttributes } = messageType;
+  const { to, from } = funcAttributes;
+
   useEffect(() => {
     // Initialize all popovers on mount
     const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
@@ -21,8 +26,7 @@ export default function Message({ own, type, text, attributes, isActive }) {
   };
 
   useEffect(() => {
-    console.log(type);
-    switch (type) {
+    switch (messageFunc) {
       case "STANDARD": {
         setEmoji("");
         break;
@@ -48,13 +52,12 @@ export default function Message({ own, type, text, attributes, isActive }) {
         break;
       }
     }
-    console.log(emoji);
   }, []);
 
   return (
     <div className={own ? "message own" : "message"}>
       <div className="messageText">
-        {!isActive ? "This is a message" : "THIS MESSAGE IS HIDDEN"}
+        {!isActive ? text : "THIS MESSAGE IS HIDDEN"}
         <span
           className="emoji"
           style={{
@@ -64,20 +67,22 @@ export default function Message({ own, type, text, attributes, isActive }) {
           }}
         >
           <button
-            type="button"
+            messageFunc="button"
             className="custom-btn"
             data-bs-toggle="popover"
             data-bs-title={
-              type === "LIMITED_VIEW_TIME"
+              messageFunc === "LIMITED_VIEW_TIME"
                 ? "Limited View Time"
                 : "Self Destructive Message"
             }
             data-bs-content={
-              type === "LIMITED_VIEW_TIME"
-                ? `This messagee wiil be visible only from ${attributes?.from} to ${attributes?.to}`
-                : `This messagee wiil be deleted in ${
-                    attributes?.to - attributes?.from
-                  }`
+              messageFunc === "LIMITED_VIEW_TIME"
+                ? `This message wiil be visible only from ${formatEpochToDate(
+                    from
+                  )} to ${formatEpochToDate(to)}`
+                : `This message wiil be deleted in ${
+                    to - Math.floor(Date.now() / 1000)
+                  } seconds`
             }
           >
             {emoji}

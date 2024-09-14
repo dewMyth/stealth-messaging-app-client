@@ -1,17 +1,26 @@
 // HomeScreen.js
-import React, { useState, useRef, useContext } from "react";
+import React, { useState, useRef, useContext, useEffect } from "react";
 import "./HomeScreen.css";
 import Conversation from "../../components/Conversation/Conversation";
 import Message from "../../components/Message/Message";
 import WelcomeMessage from "../../components/WelcomeMessage/WelcomeMessage";
 import { AuthContext } from "../../context/AuthContext";
+import {
+  useGetAllConversationsByUser,
+  useGetMessagesByConversation,
+} from "../../hooks/useConversationData";
+import ContactIcon from "../../assets/contact";
 
 const HomeScreen = () => {
   const { user } = useContext(AuthContext);
 
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(true);
   const createConvModalRef = useRef(null);
-  // const [createConvUser, setCreateConvUser] = useState("");
+
+  const [isVerified, setIsVerified] = useState(false);
+  const [unlockedConversationsList, setUnlockedConversationList] = useState([]);
+
+  const [selectedConversation, setSelectedConversation] = useState(null);
 
   const [code, setCode] = useState(new Array(6).fill(""));
 
@@ -26,14 +35,21 @@ const HomeScreen = () => {
     modal.hide();
   };
 
-  const openUnlockConversationModal = () => {
-    console.log("Unlock conversation");
-    const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
-    modal.show();
+  console.log("UnlockedConversationList Main", unlockedConversationsList);
+
+  const openUnlockConversationModal = (conv) => {
+    setSelectedConversation(conv);
+    if (unlockedConversationsList?.includes(conv._id)) {
+      closeUnlockConversationModal();
+      return;
+    } else {
+      const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
+      modal.show();
+    }
   };
 
   const closeUnlockConversationModal = () => {
-    console.log("Unlock conversation");
+    console.log("Close conversation");
     const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
     modal.hide();
   };
@@ -45,12 +61,19 @@ const HomeScreen = () => {
     modal.hide();
   };
 
-  const sendUnlockConversationRequest = (e) => {
-    console.log(e.target.value);
-    setIsUnlocked(true);
-    // Simulate closing the modal after successful request
-    const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
-    modal.hide();
+  const sendUnlockConversationRequest = () => {
+    // Do this using API call
+    setUnlockedConversationList((prevConvId) => [
+      ...prevConvId,
+      selectedConversation._id,
+    ]);
+
+    console.log("Affter Unlocking", unlockedConversationsList);
+    // console.log(e.target.value);
+    // setIsUnlocked(true);
+    // // Simulate closing the modal after successful request
+    // const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
+    // modal.hide();
   };
 
   const handleUnlockPINChange = (e, index) => {
@@ -70,10 +93,28 @@ const HomeScreen = () => {
     console.log("Code submitted:", code.join(""));
   };
 
+  // Get All Conversations By User
+  const {
+    data: allConversationsByUser,
+    isLoading: isLoadingAllConversations,
+    isError: isErrorAllConversations,
+  } = useGetAllConversationsByUser(user.id);
+
+  // useEffect(() => {
+  //   console.log(user);
+  // }, [allConversationsByUser]);
+
+  const {
+    data: messagesByConversation,
+    isLoading: isLoadingMessages,
+    isError: isErrorMessages,
+  } = useGetMessagesByConversation(selectedConversation?._id);
+
+  // useEffect(() => {}, [selectedConversation, messagesByConversation]);
+
   return (
     <div>
       {/* Header */}
-
       <div>
         <header className="header bg-dark text-white">
           <div
@@ -191,20 +232,18 @@ const HomeScreen = () => {
               id="search"
               placeholder="Search for a chat"
             />
-            <Conversation onClick={openUnlockConversationModal} />
-            <Conversation onClick={openUnlockConversationModal} />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation isOnline={true} />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation />
-            <Conversation />
+            {allConversationsByUser?.conversations?.map((conv) => {
+              return (
+                <Conversation
+                  key={conv.id}
+                  // onClick={openUnlockConversationModal}
+                  onClick={() => {
+                    openUnlockConversationModal(conv);
+                  }}
+                  conversationData={conv}
+                />
+              );
+            })}
             {/* Unlock Conversation Modal */}
             <div
               className="modal fade"
@@ -256,7 +295,7 @@ const HomeScreen = () => {
                       type="button"
                       className="sendBtn w-100"
                       data-bs-dismiss="modal"
-                      onClick={sendUnlockConversationRequest}
+                      onClick={() => sendUnlockConversationRequest()}
                     >
                       Unlock
                     </button>
@@ -276,31 +315,14 @@ const HomeScreen = () => {
           </div>
         </div>
         <div className="chatBox">
-          {!isUnlocked ? (
+          {!isUnlocked || selectedConversation == null ? (
             <WelcomeMessage />
           ) : (
             <div className="chatBoxWrapper">
               <div className="chatBoxTop">
-                <Message />
-                <Message own={true} type="LIMITED_VIEW_TIME" />
-                <Message />
-                <Message type="SELF_DESTRUCT_TIMED" />
-                <Message />
-                <Message type="LIMITED_VIEW_TIME" />
-                <Message own={true} />
-                <Message />
-                <Message
-                  own={true}
-                  isActive={true}
-                  type="SELF_DESTRUCT_TIMED"
-                />
-                <Message />
-                <Message />
-                <Message />
-                <Message own={true} />
-                <Message />
-                <Message own={true} />
-                <Message />
+                {messagesByConversation?.messages?.map((message) => {
+                  return <Message own={true} message={message} />;
+                })}
               </div>
               <hr />
               <div className="chatBoxBottom">
