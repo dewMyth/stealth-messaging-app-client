@@ -1,57 +1,109 @@
 // HomeScreen.js
-import React, { useState, useRef, useContext } from "react";
+import React, { useState, useRef, useContext, useEffect } from "react";
 import "./HomeScreen.css";
 import Conversation from "../../components/Conversation/Conversation";
 import Message from "../../components/Message/Message";
 import WelcomeMessage from "../../components/WelcomeMessage/WelcomeMessage";
 import { AuthContext } from "../../context/AuthContext";
+import {
+  useCreateConversation,
+  useCreateMessage,
+  useGetAllConversationsByUser,
+  useGetMessagesByConversation,
+  useUnlockConversation,
+} from "../../hooks/useConversationData";
+import ContactIcon from "../../assets/contact";
+import { useGetAllUsers } from "../../hooks/useUserData";
+
+import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import dayjs from "dayjs";
 
 const HomeScreen = () => {
-  const { user } = useContext(AuthContext);
+  const currentDateTime = dayjs();
+  const { user, isFetching, error, dispatch } = useContext(AuthContext);
 
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const createConvModalRef = useRef(null);
-  // const [createConvUser, setCreateConvUser] = useState("");
+  const [isUnlocked, setIsUnlocked] = useState(true);
+
+  let createConvModalRef = useRef(null);
+
+  const [isVerified, setIsVerified] = useState(false);
+  const [unlockedConversationsList, setUnlockedConversationList] = useState([]);
+
+  const [selectedConversation, setSelectedConversation] = useState(null);
 
   const [code, setCode] = useState(new Array(6).fill(""));
 
   const unlockConvModalRef = useRef(null);
 
-  const openCreateConversationModal = () => {
-    const modal = new window.bootstrap.Modal(createConvModalRef.current);
-    modal.show();
-  };
-  const closeCreateConversationModal = () => {
-    const modal = new window.bootstrap.Modal(createConvModalRef.current);
-    modal.hide();
-  };
-
-  const openUnlockConversationModal = () => {
-    console.log("Unlock conversation");
-    const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
-    modal.show();
+  const openUnlockConversationModal = (conv) => {
+    setSelectedConversation(conv);
+    if (unlockedConversationsList?.includes(conv._id)) {
+      closeUnlockConversationModal();
+      return;
+    } else {
+      const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
+      modal.show();
+    }
   };
 
   const closeUnlockConversationModal = () => {
-    console.log("Unlock conversation");
-    const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
-    modal.hide();
+    const modal = window.bootstrap.Modal.getInstance(
+      unlockConvModalRef.current
+    );
+    if (modal) {
+      modal.hide();
+    }
   };
 
   const sendCreateConversationRequest = (e) => {
-    console.log(e.target.value);
     // Simulate closing the modal after successful request
     const modal = new window.bootstrap.Modal(createConvModalRef.current);
     modal.hide();
   };
 
+  const {
+    mutate: unlockConversationMutation,
+    isLoading: isLoadingUnlockConversation,
+    isSuccess: isSuccessUnlockConversation,
+    isError: isErrorUnlockConversation,
+    data: dataUnlockConversation,
+  } = useUnlockConversation();
+
   const sendUnlockConversationRequest = (e) => {
-    console.log(e.target.value);
-    setIsUnlocked(true);
-    // Simulate closing the modal after successful request
-    const modal = new window.bootstrap.Modal(unlockConvModalRef.current);
-    modal.hide();
+    e.preventDefault();
+    // Do this using API call
+    const unlockData = {
+      conversationId: selectedConversation._id,
+      enteredPIN: code.join(""),
+    };
+    if (!unlockData) {
+      alert("Please enter a valid PIN");
+      return;
+    }
+
+    unlockConversationMutation(unlockData);
   };
+
+  useEffect(() => {
+    if (isSuccessUnlockConversation) {
+      if (unlockedConversationsList.includes(selectedConversation._id)) {
+        return;
+      }
+      setUnlockedConversationList([
+        ...unlockedConversationsList,
+        selectedConversation._id,
+      ]);
+      closeUnlockConversationModal();
+    }
+
+    if (isErrorUnlockConversation) {
+      alert("Failed to unlock conversation. Please try again.");
+      closeUnlockConversationModal();
+    }
+  }, [isSuccessUnlockConversation, isErrorUnlockConversation]);
 
   const handleUnlockPINChange = (e, index) => {
     const { value } = e.target;
@@ -67,13 +119,161 @@ const HomeScreen = () => {
 
   const handleUnlockPINSubmit = (e) => {
     e.preventDefault();
-    console.log("Code submitted:", code.join(""));
+  };
+
+  // Get All Conversations By User
+  const {
+    data: allConversationsByUser,
+    isLoading: isLoadingAllConversations,
+    isError: isErrorAllConversations,
+  } = useGetAllConversationsByUser(user.id);
+
+  // Get Messages By Conversation
+  const {
+    data: messagesByConversation,
+    isLoading: isLoadingMessages,
+    isError: isErrorMessages,
+  } = useGetMessagesByConversation(
+    selectedConversation?._id,
+    unlockedConversationsList
+  );
+
+  // Get All Users
+  const {
+    data: allUsers,
+    isLoading: isLoadingUsers,
+    isError: isErrorUsers,
+  } = useGetAllUsers(user.id);
+
+  const {
+    mutate: createConversationMutate,
+    isLoading: isCreateConversationLoading,
+    isError: isCreateConversationError,
+    isSuccess: isCreateConversationSuccess,
+    data: createConversationData,
+    error: createConversationError,
+  } = useCreateConversation();
+
+  const handleCreateConversation = (member) => {
+    const conveMembers = {
+      members: [user.id, member._id],
+    };
+    if (conveMembers) {
+      createConversationMutate(conveMembers);
+    } else {
+      alert("Please select a user.");
+    }
+
+    // Additional logic for creating the conversation
+  };
+
+  useEffect(() => {
+    if (isCreateConversationSuccess) {
+      alert("Create conversation Successful!");
+      closeCreateConversationModal();
+    }
+  }, [isCreateConversationSuccess]);
+
+  const openCreateConversationModal = () => {
+    const modal = new window.bootstrap.Modal(createConvModalRef.current);
+    modal.show();
+  };
+  const closeCreateConversationModal = () => {
+    const modal = window.bootstrap.Modal.getInstance(
+      createConvModalRef.current
+    );
+    if (modal) {
+      modal.hide();
+    }
+  };
+
+  const [messageText, setMessageText] = useState("");
+
+  const handleMessageChange = (e, index) => {
+    e.preventDefault();
+    const { value } = e.target;
+    setMessageText(value);
+  };
+
+  const {
+    mutate: createMessageMutate,
+    isLoading: isLoadingMessage,
+    isError: isErrorMessage,
+    isSuccess: isSuccessMessage,
+    data: createMessageData,
+    error: createMessageError,
+  } = useCreateMessage();
+
+  const sendMessage = (messageAttributes) => {
+    const { type, funcAttributes } = messageAttributes;
+
+    console.log(type);
+    console.log(funcAttributes);
+
+    let messagePayload;
+
+    if (type === "STANDARD") {
+      messagePayload = {
+        text: messageText,
+        senderId: user.id,
+        conversationId: selectedConversation._id,
+        messageType: {
+          messageFunc: 0,
+          funcAttributes: {
+            to: "",
+            from: "",
+          },
+        },
+      };
+    }
+    if (type === "LIMITED_VIEW_TIME") {
+      messagePayload = {
+        text: messageText,
+        senderId: user.id,
+        conversationId: selectedConversation._id,
+        messageType: {
+          messageFunc: 2,
+          funcAttributes: funcAttributes,
+        },
+      };
+    }
+    console.log(messagePayload);
+
+    if (!messagePayload) {
+      alert("Please enter a message.");
+      return;
+    }
+
+    // API Call
+    createMessageMutate(messagePayload);
+  };
+
+  const limitedViewTimeModalRef = useRef(null);
+
+  const openLimitedViewTimeMessage = () => {
+    const modal = new window.bootstrap.Modal(limitedViewTimeModalRef.current);
+    modal.show();
+  };
+
+  const [limitedViewTimeTo, setLimitedViewTimeTo] = useState(null);
+  const [limitedViewTimeFrom, setLimitedViewTimeFrom] = useState(null);
+
+  const sendLimitedViewTimeMessage = () => {
+    const messageAttributes = {
+      type: "LIMITED_VIEW_TIME",
+      funcAttributes: {
+        to: new Date(limitedViewTimeTo).getTime() / 1000,
+        from: new Date(limitedViewTimeFrom).getTime() / 1000,
+      },
+    };
+
+    console.log(messageAttributes);
+    sendMessage(messageAttributes);
   };
 
   return (
     <div>
       {/* Header */}
-
       <div>
         <header className="header bg-dark text-white">
           <div
@@ -106,6 +306,10 @@ const HomeScreen = () => {
                 fontFamily: "Noto Sans",
                 fontSize: "14px",
                 fontWeight: "bold",
+              }}
+              onClick={() => {
+                dispatch({ type: "LOGOUT" });
+                window.location.reload();
               }}
             >
               <span class="material-symbols-outlined">logout</span>
@@ -143,30 +347,23 @@ const HomeScreen = () => {
                     <h5 className="modal-title" id="exampleModalLabel">
                       Create a Conversation with...
                     </h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      data-bs-dismiss="modal"
-                      aria-label="Close"
-                    ></button>
                   </div>
                   <div className="container">
                     <ul class="list-group w-100 p-3">
-                      <li
-                        class="list-group-item"
-                        onClick={sendCreateConversationRequest}
-                      >
-                        An item
-                      </li>
-                      <li
-                        class="list-group-item"
-                        onClick={sendCreateConversationRequest}
-                      >
-                        A second item
-                      </li>
-                      <li class="list-group-item">A third item</li>
-                      <li class="list-group-item">A fourth item</li>
-                      <li class="list-group-item">And a fifth one</li>
+                      {allUsers?.map((user) => {
+                        return (
+                          <li className="list-group-item" key={user?._id}>
+                            <button
+                              onClick={() => handleCreateConversation(user)}
+                            >
+                              {user?.userName}
+                              <span style={{ fontSize: "10px" }}>
+                                {user?.email}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
 
@@ -191,24 +388,23 @@ const HomeScreen = () => {
               id="search"
               placeholder="Search for a chat"
             />
-            <Conversation onClick={openUnlockConversationModal} />
-            <Conversation onClick={openUnlockConversationModal} />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation isOnline={true} />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation />
-            <Conversation isOnline={true} />
-            <Conversation />
-            <Conversation />
-            <Conversation />
+            {allConversationsByUser?.conversations?.map((conv) => {
+              return (
+                <Conversation
+                  key={conv.id}
+                  // onClick={openUnlockConversationModal}
+                  onClick={() => {
+                    openUnlockConversationModal(conv);
+                  }}
+                  conversationData={conv}
+                />
+              );
+            })}
             {/* Unlock Conversation Modal */}
             <div
               className="modal fade"
               id="unlockConvModal"
+              data-bs-backdrop="static"
               tabIndex="-1"
               aria-labelledby="unlockConvModal"
               aria-hidden="true"
@@ -256,6 +452,7 @@ const HomeScreen = () => {
                       type="button"
                       className="sendBtn w-100"
                       data-bs-dismiss="modal"
+                      data-bs-target="#staticBackdrop"
                       onClick={sendUnlockConversationRequest}
                     >
                       Unlock
@@ -276,31 +473,15 @@ const HomeScreen = () => {
           </div>
         </div>
         <div className="chatBox">
-          {!isUnlocked ? (
+          {!isUnlocked || selectedConversation == null ? (
             <WelcomeMessage />
           ) : (
             <div className="chatBoxWrapper">
               <div className="chatBoxTop">
-                <Message />
-                <Message own={true} type="LIMITED_VIEW_TIME" />
-                <Message />
-                <Message type="SELF_DESTRUCT_TIMED" />
-                <Message />
-                <Message type="LIMITED_VIEW_TIME" />
-                <Message own={true} />
-                <Message />
-                <Message
-                  own={true}
-                  isActive={true}
-                  type="SELF_DESTRUCT_TIMED"
-                />
-                <Message />
-                <Message />
-                <Message />
-                <Message own={true} />
-                <Message />
-                <Message own={true} />
-                <Message />
+                {messagesByConversation?.messages?.map((message) => {
+                  const isOwn = message.senderId === user.id;
+                  return <Message own={isOwn} message={message} />;
+                })}
               </div>
               <hr />
               <div className="chatBoxBottom">
@@ -310,16 +491,105 @@ const HomeScreen = () => {
                   className="form-control"
                   placeholder="Write Something..."
                   rows={5}
+                  onChange={(e, index) => handleMessageChange(e, index)}
                 ></textarea>
               </div>
               <div className="chatBoxButtonGrp">
-                <button type="button" className="btn btn-primary sendBtn">
+                <button
+                  type="button"
+                  id="standard"
+                  className="btn btn-primary sendBtn"
+                  onClick={() => sendMessage({ type: "STANDARD" })}
+                >
                   Send
                 </button>
-                <button type="button" className="btn btn-primary sendBtn">
+                <button
+                  type="button"
+                  id="limited-view-time"
+                  className="btn btn-primary sendBtn"
+                  onClick={openLimitedViewTimeMessage}
+                >
                   Send Limited View Time Message
                 </button>
-                <button type="button" className="btn btn-primary sendBtn">
+                {/* <!-- Send Limited View Time Message Modal --> */}
+                <div
+                  className="modal fade"
+                  id="sendLimitedViewTimeModal"
+                  data-bs-backdrop="static"
+                  tabIndex="-1"
+                  aria-labelledby="unlockConvModal"
+                  aria-hidden="true"
+                  ref={limitedViewTimeModalRef}
+                >
+                  <div className="modal-dialog">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title" id="exampleModalLabel">
+                          Send Limited View Time Message
+                        </h5>
+                        <button
+                          type="button"
+                          className="btn-close"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"
+                        ></button>
+                      </div>
+                      <div className="set-time">
+                        <p className="form-description">
+                          Please Select which time the receiver can view this
+                          message
+                        </p>
+                        <div className="form-control">
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DemoContainer components={["DateTimePicker"]}>
+                              <DateTimePicker
+                                label="Select Show From..."
+                                value={limitedViewTimeFrom}
+                                onChange={(newValue) => {
+                                  setLimitedViewTimeFrom(newValue);
+                                }}
+                                minDateTime={currentDateTime}
+                              />
+                              <DateTimePicker
+                                label="Select Show till..."
+                                value={limitedViewTimeTo}
+                                onChange={(newValue) => {
+                                  setLimitedViewTimeTo(newValue);
+                                }}
+                                minDateTime={currentDateTime}
+                              />
+                            </DemoContainer>
+                          </LocalizationProvider>
+                        </div>
+                      </div>
+
+                      <div className="modal-footer">
+                        <button
+                          type="button"
+                          className="sendBtn w-100"
+                          data-bs-dismiss="modal"
+                          data-bs-target="#staticBackdrop"
+                          onClick={sendLimitedViewTimeMessage}
+                        >
+                          Send Message
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary w-100"
+                          data-bs-dismiss="modal"
+                          onClick={closeUnlockConversationModal}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  id="self-destruct"
+                  className="btn btn-primary sendBtn"
+                >
                   Send Self Destruct Message
                 </button>
               </div>
