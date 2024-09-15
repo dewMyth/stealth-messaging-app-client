@@ -1,13 +1,33 @@
 import React, { useEffect, useState } from "react";
 import "./Message.css";
-import { formatEpochToDate } from "../../utils";
+import { decryptMessage, formatEpochToDate } from "../../utils";
 
 export default function Message({ own, message }) {
-  const { text, isActive, messageType } = message;
+  const { text, isActive, messageType, conversationId } = message;
   const { messageFunc, funcAttributes } = messageType;
   const { to, from } = funcAttributes;
 
   const [filteredText, setFilteredText] = useState([]);
+
+  const badWordRepo = ["dog", "animal", "bad"];
+
+  // Decrypt the message
+  useEffect(
+    () => {
+      // Decrypt the message using the provided encryption key
+      const decryptedText = decryptMessage(text, conversationId);
+      const allWordInText = decryptedText?.split(" ");
+
+      const updatedText = allWordInText?.map((word) => {
+        const isBadWord = badWordRepo.includes(word);
+
+        return isBadWord ? "%@^&!#" : word;
+      });
+
+      setFilteredText(updatedText || []);
+    },
+    { message }
+  );
 
   useEffect(() => {
     // Initialize all popovers on mount
@@ -33,19 +53,9 @@ export default function Message({ own, message }) {
 
   const [emoji, setEmoji] = useState("");
 
-  const badWordRepo = ["dog", "animal", "bad"];
+  // useEffect(() => {
 
-  useEffect(() => {
-    const allWordInText = text?.split(" ");
-
-    const updatedText = allWordInText?.map((word) => {
-      const isBadWord = badWordRepo.includes(word);
-
-      return isBadWord ? "%@^&!#" : word;
-    });
-
-    setFilteredText(updatedText || []);
-  }, [text]);
+  // }, [text]);
 
   const iconStyle = {
     color: own ? "black" : "white",

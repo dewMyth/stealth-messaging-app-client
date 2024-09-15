@@ -20,6 +20,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
+import { encryptMessage } from "../../utils";
 
 const HomeScreen = () => {
   const currentDateTime = dayjs();
@@ -213,11 +214,19 @@ const HomeScreen = () => {
     console.log(type);
     console.log(funcAttributes);
 
+    // Encrypt the message using conversationId as the secretKey
+    const encryptedMessageText = encryptMessage(
+      messageText,
+      selectedConversation._id
+    );
+
+    console.log("encrypted message", encryptedMessageText);
+
     let messagePayload;
 
     if (type === "STANDARD") {
       messagePayload = {
-        text: messageText,
+        text: encryptedMessageText,
         senderId: user.id,
         conversationId: selectedConversation._id,
         messageType: {
@@ -231,7 +240,7 @@ const HomeScreen = () => {
     }
     if (type === "SELF_DESTRUCT_TIMED") {
       messagePayload = {
-        text: messageText,
+        text: encryptedMessageText,
         senderId: user.id,
         conversationId: selectedConversation._id,
         messageType: {
@@ -242,7 +251,7 @@ const HomeScreen = () => {
     }
     if (type === "LIMITED_VIEW_TIME") {
       messagePayload = {
-        text: messageText,
+        text: encryptedMessageText,
         senderId: user.id,
         conversationId: selectedConversation._id,
         messageType: {
