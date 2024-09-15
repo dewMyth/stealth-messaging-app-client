@@ -33,7 +33,6 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
 
     if (!formData) {
       alert("Please fill in all fields.");
@@ -42,7 +41,6 @@ export default function Login() {
 
     dispatch({ type: "LOGIN_START" });
     loginUserMutate(formData);
-    console.log(loginUserData);
   };
 
   useEffect(() => {

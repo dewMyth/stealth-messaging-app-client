@@ -15,7 +15,14 @@ import {
 import ContactIcon from "../../assets/contact";
 import { useGetAllUsers } from "../../hooks/useUserData";
 
+import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import dayjs from "dayjs";
+
 const HomeScreen = () => {
+  const currentDateTime = dayjs();
   const { user, isFetching, error, dispatch } = useContext(AuthContext);
 
   const [isUnlocked, setIsUnlocked] = useState(true);
@@ -30,8 +37,6 @@ const HomeScreen = () => {
   const [code, setCode] = useState(new Array(6).fill(""));
 
   const unlockConvModalRef = useRef(null);
-
-  console.log("UnlockedConversationList Main", unlockedConversationsList);
 
   const openUnlockConversationModal = (conv) => {
     setSelectedConversation(conv);
@@ -54,7 +59,6 @@ const HomeScreen = () => {
   };
 
   const sendCreateConversationRequest = (e) => {
-    console.log(e.target.value);
     // Simulate closing the modal after successful request
     const modal = new window.bootstrap.Modal(createConvModalRef.current);
     modal.hide();
@@ -75,8 +79,6 @@ const HomeScreen = () => {
       conversationId: selectedConversation._id,
       enteredPIN: code.join(""),
     };
-
-    console.log(unlockData);
     if (!unlockData) {
       alert("Please enter a valid PIN");
       return;
@@ -87,7 +89,6 @@ const HomeScreen = () => {
 
   useEffect(() => {
     if (isSuccessUnlockConversation) {
-      console.log("data unlocked cov", dataUnlockConversation);
       if (unlockedConversationsList.includes(selectedConversation._id)) {
         return;
       }
@@ -99,7 +100,6 @@ const HomeScreen = () => {
     }
 
     if (isErrorUnlockConversation) {
-      console.log("Error unlocking cov", isErrorUnlockConversation);
       alert("Failed to unlock conversation. Please try again.");
       closeUnlockConversationModal();
     }
@@ -119,7 +119,6 @@ const HomeScreen = () => {
 
   const handleUnlockPINSubmit = (e) => {
     e.preventDefault();
-    console.log("Code submitted:", code.join(""));
   };
 
   // Get All Conversations By User
@@ -161,8 +160,6 @@ const HomeScreen = () => {
     };
     if (conveMembers) {
       createConversationMutate(conveMembers);
-
-      console.log(conveMembers);
     } else {
       alert("Please select a user.");
     }
@@ -208,12 +205,14 @@ const HomeScreen = () => {
   } = useCreateMessage();
 
   const sendMessage = (messageAttributes) => {
-    const { type } = messageAttributes;
-    let messagePayload;
+    const { type, funcAttributes } = messageAttributes;
 
     console.log(type);
+    console.log(funcAttributes);
 
-    if (type == "STANDARD") {
+    let messagePayload;
+
+    if (type === "STANDARD") {
       messagePayload = {
         text: messageText,
         senderId: user.id,
@@ -227,7 +226,17 @@ const HomeScreen = () => {
         },
       };
     }
-
+    if (type === "LIMITED_VIEW_TIME") {
+      messagePayload = {
+        text: messageText,
+        senderId: user.id,
+        conversationId: selectedConversation._id,
+        messageType: {
+          messageFunc: 2,
+          funcAttributes: funcAttributes,
+        },
+      };
+    }
     console.log(messagePayload);
 
     if (!messagePayload) {
@@ -239,16 +248,28 @@ const HomeScreen = () => {
     createMessageMutate(messagePayload);
   };
 
-  useEffect(() => {
-    // Initialize all popovers on mount
-    const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
-    popovers.forEach((popover) => {
-      new window.bootstrap.Popover(popover, {
-        trigger: "click",
-        container: "body", // Optional: Make sure the popover is appended to the body
-      });
-    });
-  }, []);
+  const limitedViewTimeModalRef = useRef(null);
+
+  const openLimitedViewTimeMessage = () => {
+    const modal = new window.bootstrap.Modal(limitedViewTimeModalRef.current);
+    modal.show();
+  };
+
+  const [limitedViewTimeTo, setLimitedViewTimeTo] = useState(null);
+  const [limitedViewTimeFrom, setLimitedViewTimeFrom] = useState(null);
+
+  const sendLimitedViewTimeMessage = () => {
+    const messageAttributes = {
+      type: "LIMITED_VIEW_TIME",
+      funcAttributes: {
+        to: new Date(limitedViewTimeTo).getTime() / 1000,
+        from: new Date(limitedViewTimeFrom).getTime() / 1000,
+      },
+    };
+
+    console.log(messageAttributes);
+    sendMessage(messageAttributes);
+  };
 
   return (
     <div>
@@ -458,10 +479,6 @@ const HomeScreen = () => {
             <div className="chatBoxWrapper">
               <div className="chatBoxTop">
                 {messagesByConversation?.messages?.map((message) => {
-                  console.log(message);
-                  // setOwn to true if user.id is equal to message.senderId
-                  console.log("Message eke sendId eka", message.senderId);
-                  console.log("log wela inna userge Id eka", user.id);
                   const isOwn = message.senderId === user.id;
                   return <Message own={isOwn} message={message} />;
                 })}
@@ -490,9 +507,84 @@ const HomeScreen = () => {
                   type="button"
                   id="limited-view-time"
                   className="btn btn-primary sendBtn"
+                  onClick={openLimitedViewTimeMessage}
                 >
                   Send Limited View Time Message
                 </button>
+                {/* <!-- Send Limited View Time Message Modal --> */}
+                <div
+                  className="modal fade"
+                  id="sendLimitedViewTimeModal"
+                  data-bs-backdrop="static"
+                  tabIndex="-1"
+                  aria-labelledby="unlockConvModal"
+                  aria-hidden="true"
+                  ref={limitedViewTimeModalRef}
+                >
+                  <div className="modal-dialog">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title" id="exampleModalLabel">
+                          Send Limited View Time Message
+                        </h5>
+                        <button
+                          type="button"
+                          className="btn-close"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"
+                        ></button>
+                      </div>
+                      <div className="set-time">
+                        <p className="form-description">
+                          Please Select which time the receiver can view this
+                          message
+                        </p>
+                        <div className="form-control">
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DemoContainer components={["DateTimePicker"]}>
+                              <DateTimePicker
+                                label="Select Show From..."
+                                value={limitedViewTimeFrom}
+                                onChange={(newValue) => {
+                                  setLimitedViewTimeFrom(newValue);
+                                }}
+                                minDateTime={currentDateTime}
+                              />
+                              <DateTimePicker
+                                label="Select Show till..."
+                                value={limitedViewTimeTo}
+                                onChange={(newValue) => {
+                                  setLimitedViewTimeTo(newValue);
+                                }}
+                                minDateTime={currentDateTime}
+                              />
+                            </DemoContainer>
+                          </LocalizationProvider>
+                        </div>
+                      </div>
+
+                      <div className="modal-footer">
+                        <button
+                          type="button"
+                          className="sendBtn w-100"
+                          data-bs-dismiss="modal"
+                          data-bs-target="#staticBackdrop"
+                          onClick={sendLimitedViewTimeMessage}
+                        >
+                          Send Message
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary w-100"
+                          data-bs-dismiss="modal"
+                          onClick={closeUnlockConversationModal}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <button
                   type="button"
                   id="self-destruct"
