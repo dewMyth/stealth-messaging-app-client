@@ -112,3 +112,33 @@ export const useCreateMessage = () => {
     },
   });
 };
+
+const removeConversation = async (data) => {
+  const response = await axios.post(
+    baseUrl + `conversations/delete-conversation`,
+    data
+  );
+  return response.data;
+};
+
+export const useRemoveConversation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: removeConversation,
+    onSuccess: (data) => {
+      // Update the conversation list to exclude the deleted conversation
+      queryClient.invalidateQueries([
+        "conversations",
+        "getAllConversationsByUser",
+      ]);
+    },
+    onError: (err) => {
+      if (err.response) {
+        throw err.response.data.message;
+      } else {
+        throw err.message; // re-throw the error
+      }
+    },
+  });
+};

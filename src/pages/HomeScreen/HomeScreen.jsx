@@ -1,5 +1,6 @@
 // HomeScreen.js
-import React, { useState, useRef, useContext, useEffect } from "react";
+import * as React from "react";
+import { useState, useRef, useContext, useEffect } from "react";
 import "./HomeScreen.css";
 import Conversation from "../../components/Conversation/Conversation";
 import Message from "../../components/Message/Message";
@@ -10,6 +11,7 @@ import {
   useCreateMessage,
   useGetAllConversationsByUser,
   useGetMessagesByConversation,
+  useRemoveConversation,
   useUnlockConversation,
 } from "../../hooks/useConversationData";
 import ContactIcon from "../../assets/contact";
@@ -22,8 +24,16 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
 import { encryptMessage } from "../../utils";
 
+// mUI
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import { useNavigate } from "react-router-dom";
+
 const HomeScreen = () => {
   const currentDateTime = dayjs();
+
+  const naviagte = useNavigate();
 
   const srcollRef = useRef();
 
@@ -130,7 +140,7 @@ const HomeScreen = () => {
     data: allConversationsByUser,
     isLoading: isLoadingAllConversations,
     isError: isErrorAllConversations,
-  } = useGetAllConversationsByUser(user.id);
+  } = useGetAllConversationsByUser(user?.id);
 
   // Get Messages By Conversation
   const {
@@ -147,7 +157,7 @@ const HomeScreen = () => {
     data: allUsers,
     isLoading: isLoadingUsers,
     isError: isErrorUsers,
-  } = useGetAllUsers(user.id);
+  } = useGetAllUsers(user?.id);
 
   const {
     mutate: createConversationMutate,
@@ -318,6 +328,28 @@ const HomeScreen = () => {
     srcollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesByConversation]);
 
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const {
+    mutate: removeConversationMutation,
+    isLoading: isLoadingRemoveConversation,
+    isSuccess: isSuccessRemoveConversation,
+    isError: isErrorRemoveConversation,
+    data: dataRemoveConversation,
+    error: errorRemoveConversation,
+  } = useRemoveConversation();
+
+  const handleDelete = (conv) => {
+    if (selectedConversation) {
+      removeConversationMutation({ conversationId: conv._id });
+      setAnchorEl(null);
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -356,7 +388,8 @@ const HomeScreen = () => {
               }}
               onClick={() => {
                 dispatch({ type: "LOGOUT" });
-                window.location.reload();
+                window.localStorage.removeItem("user");
+                window.location.href = "/";
               }}
             >
               <span class="material-symbols-outlined">logout</span>
@@ -437,14 +470,52 @@ const HomeScreen = () => {
             />
             {allConversationsByUser?.conversations?.map((conv) => {
               return (
-                <Conversation
-                  key={conv.id}
-                  // onClick={openUnlockConversationModal}
+                <div
+                  className="chat-list-item"
                   onClick={() => {
                     openUnlockConversationModal(conv);
                   }}
-                  conversationData={conv}
-                />
+                >
+                  <Conversation
+                    key={conv.id}
+                    // onClick={openUnlockConversationModal}
+                    conversationData={conv}
+                  />
+
+                  <div>
+                    <Button
+                      id="basic-button"
+                      aria-controls={open ? "basic-menu" : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={open ? "true" : undefined}
+                      onClick={handleClick}
+                    >
+                      <span
+                        class="material-symbols-outlined"
+                        style={{ color: "black" }}
+                      >
+                        more_vert
+                      </span>
+                    </Button>
+                    <Menu
+                      id="basic-menu"
+                      anchorEl={anchorEl}
+                      open={open}
+                      onClose={() => setAnchorEl(null)}
+                      MenuListProps={{
+                        "aria-labelledby": "basic-button",
+                      }}
+                    >
+                      <MenuItem onClick={() => handleDelete(conv)}>
+                        Delete
+                      </MenuItem>
+                    </Menu>
+                  </div>
+
+                  {/* <button className="btn">
+                    <span class="material-symbols-outlined">more_vert</span>
+                  </button> */}
+                </div>
               );
             })}
             {/* Unlock Conversation Modal */}
