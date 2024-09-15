@@ -7,6 +7,8 @@ export default function Message({ own, message }) {
   const { messageFunc, funcAttributes } = messageType;
   const { to, from } = funcAttributes;
 
+  const [filteredText, setFilteredText] = useState([]);
+
   useEffect(() => {
     // Initialize all popovers on mount
     const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
@@ -19,6 +21,20 @@ export default function Message({ own, message }) {
   }, []);
 
   const [emoji, setEmoji] = useState("");
+
+  const badWordRepo = ["dog", "animal", "bad"];
+
+  useEffect(() => {
+    const allWordInText = text?.split(" ");
+
+    const updatedText = allWordInText?.map((word) => {
+      const isBadWord = badWordRepo.includes(word);
+
+      return isBadWord ? "%@^&!#" : word;
+    });
+
+    setFilteredText(updatedText || []);
+  }, [text]);
 
   const iconStyle = {
     color: own ? "black" : "white",
@@ -57,7 +73,13 @@ export default function Message({ own, message }) {
   return (
     <div className={own ? "message own" : "message"}>
       <div className="messageText">
-        {!isActive ? text : "THIS MESSAGE IS HIDDEN"}
+        {isActive ? (
+          filteredText.join(" ")
+        ) : (
+          <span>
+            <i>This message is restricted</i>
+          </span>
+        )}
         <span
           className="emoji"
           style={{
