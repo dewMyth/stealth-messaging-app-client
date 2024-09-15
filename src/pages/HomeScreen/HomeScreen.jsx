@@ -226,6 +226,17 @@ const HomeScreen = () => {
         },
       };
     }
+    if (type === "SELF_DESTRUCT_TIMED") {
+      messagePayload = {
+        text: messageText,
+        senderId: user.id,
+        conversationId: selectedConversation._id,
+        messageType: {
+          messageFunc: 1,
+          funcAttributes: funcAttributes,
+        },
+      };
+    }
     if (type === "LIMITED_VIEW_TIME") {
       messagePayload = {
         text: messageText,
@@ -268,6 +279,26 @@ const HomeScreen = () => {
     };
 
     console.log(messageAttributes);
+    sendMessage(messageAttributes);
+  };
+
+  const selfDestructMessageModalRef = useRef(null);
+  const openselfDestructMessageModal = () => {
+    const modal = new window.bootstrap.Modal(
+      selfDestructMessageModalRef.current
+    );
+    modal.show();
+  };
+
+  const [selfDestructTimer, setSelfDestructTimer] = useState(0);
+  const sendSelfDestructMessage = () => {
+    const messageAttributes = {
+      type: "SELF_DESTRUCT_TIMED",
+      funcAttributes: {
+        from: Math.floor(Date.now() / 1000),
+        to: Math.floor(Date.now() / 1000) + parseInt(selfDestructTimer),
+      },
+    };
     sendMessage(messageAttributes);
   };
 
@@ -589,9 +620,71 @@ const HomeScreen = () => {
                   type="button"
                   id="self-destruct"
                   className="btn btn-primary sendBtn"
+                  onClick={openselfDestructMessageModal}
                 >
                   Send Self Destruct Message
                 </button>
+                <div
+                  className="modal fade"
+                  id="sendLimitedViewTimeModal"
+                  data-bs-backdrop="static"
+                  tabIndex="-1"
+                  aria-labelledby="unlockConvModal"
+                  aria-hidden="true"
+                  ref={selfDestructMessageModalRef}
+                >
+                  <div className="modal-dialog">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title" id="exampleModalLabel">
+                          Send Self Destruct Message
+                        </h5>
+                        <button
+                          type="button"
+                          className="btn-close"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"
+                        ></button>
+                      </div>
+                      <div className="set-time">
+                        <p className="form-description">
+                          Please set the timer to send Self Destruct Message
+                        </p>
+                        <div className="form-control">
+                          <input
+                            type="number"
+                            class="form-control"
+                            id="exampleFormControlInput1"
+                            placeholder="Add timer in seconds..."
+                            onChange={(e) =>
+                              setSelfDestructTimer(e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="modal-footer">
+                        <button
+                          type="button"
+                          className="sendBtn w-100"
+                          data-bs-dismiss="modal"
+                          data-bs-target="#staticBackdrop"
+                          onClick={sendSelfDestructMessage}
+                        >
+                          Send Message
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary w-100"
+                          data-bs-dismiss="modal"
+                          onClick={closeUnlockConversationModal}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

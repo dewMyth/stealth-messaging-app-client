@@ -20,6 +20,17 @@ export default function Message({ own, message }) {
     });
   }, []);
 
+  const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentTime(Math.floor(Date.now() / 1000));
+    }, 1000);
+
+    // Cleanup the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
   const [emoji, setEmoji] = useState("");
 
   const badWordRepo = ["dog", "animal", "bad"];
@@ -102,9 +113,11 @@ export default function Message({ own, message }) {
                 ? `This message wiil be visible only from ${formatEpochToDate(
                     from
                   )} to ${formatEpochToDate(to)}`
-                : `This message wiil be deleted in ${
-                    to - Math.floor(Date.now() / 1000)
-                  } seconds`
+                : `This message will be deleted in ${
+                    to - currentTime > 0
+                      ? `${to - currentTime} in seconds`
+                      : `${Math.abs(to - currentTime)} seconds ago`
+                  }`
             }
           >
             {emoji}
