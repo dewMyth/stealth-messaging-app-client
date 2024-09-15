@@ -23,6 +23,9 @@ import dayjs from "dayjs";
 
 const HomeScreen = () => {
   const currentDateTime = dayjs();
+
+  const srcollRef = useRef();
+
   const { user, isFetching, error, dispatch } = useContext(AuthContext);
 
   const [isUnlocked, setIsUnlocked] = useState(true);
@@ -302,6 +305,10 @@ const HomeScreen = () => {
     sendMessage(messageAttributes);
   };
 
+  useEffect(() => {
+    srcollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messagesByConversation]);
+
   return (
     <div>
       {/* Header */}
@@ -511,7 +518,11 @@ const HomeScreen = () => {
               <div className="chatBoxTop">
                 {messagesByConversation?.messages?.map((message) => {
                   const isOwn = message.senderId === user.id;
-                  return <Message own={isOwn} message={message} />;
+                  return (
+                    <div ref={srcollRef}>
+                      <Message own={isOwn} message={message} />
+                    </div>
+                  );
                 })}
               </div>
               <hr />
