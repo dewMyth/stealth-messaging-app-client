@@ -1,3 +1,5 @@
+var CryptoJS = require("crypto-js");
+
 export const formatEpochToDate = (epoch) => {
   // Convert Unix epoch (seconds) to milliseconds
   const date = new Date(epoch * 1000);
@@ -8,4 +10,22 @@ export const formatEpochToDate = (epoch) => {
   const minutes = String(date.getMinutes()).padStart(2, "0");
 
   return `${year}-${month}-${day} ${hours}:${minutes}`;
+};
+
+export const encryptMessage = (text, secretKey) => {
+  // Encrypt
+  var encryptedMessage = CryptoJS.AES.encrypt(text, secretKey).toString();
+  return encryptedMessage;
+};
+
+export const decryptMessage = (encryptedText, secretKey) => {
+  console.log("dec", encryptedText);
+  console.log("dec key", secretKey);
+
+  // Decrypt
+  var decryptedMessage = CryptoJS.AES.decrypt(
+    encryptedText,
+    secretKey
+  ).toString(CryptoJS.enc.Utf8);
+  return decryptedMessage;
 };

@@ -1,13 +1,33 @@
 import React, { useEffect, useState } from "react";
 import "./Message.css";
-import { formatEpochToDate } from "../../utils";
+import { decryptMessage, formatEpochToDate } from "../../utils";
 
 export default function Message({ own, message }) {
-  const { text, isActive, messageType } = message;
+  const { text, isActive, messageType, conversationId } = message;
   const { messageFunc, funcAttributes } = messageType;
   const { to, from } = funcAttributes;
 
   const [filteredText, setFilteredText] = useState([]);
+
+  const badWordRepo = ["dog", "animal", "bad"];
+
+  // Decrypt the message
+  useEffect(
+    () => {
+      // Decrypt the message using the provided encryption key
+      const decryptedText = decryptMessage(text, conversationId);
+      const allWordInText = decryptedText?.split(" ");
+
+      const updatedText = allWordInText?.map((word) => {
+        const isBadWord = badWordRepo.includes(word);
+
+        return isBadWord ? "%@^&!#" : word;
+      });
+
+      setFilteredText(updatedText || []);
+    },
+    { message }
+  );
 
   useEffect(() => {
     // Initialize all popovers on mount
@@ -20,21 +40,22 @@ export default function Message({ own, message }) {
     });
   }, []);
 
-  const [emoji, setEmoji] = useState("");
-
-  const badWordRepo = ["dog", "animal", "bad"];
+  const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
 
   useEffect(() => {
-    const allWordInText = text?.split(" ");
+    const intervalId = setInterval(() => {
+      setCurrentTime(Math.floor(Date.now() / 1000));
+    }, 1000);
 
-    const updatedText = allWordInText?.map((word) => {
-      const isBadWord = badWordRepo.includes(word);
+    // Cleanup the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
-      return isBadWord ? "%@^&!#" : word;
-    });
+  const [emoji, setEmoji] = useState("");
 
-    setFilteredText(updatedText || []);
-  }, [text]);
+  // useEffect(() => {
+
+  // }, [text]);
 
   const iconStyle = {
     color: own ? "black" : "white",
@@ -102,9 +123,11 @@ export default function Message({ own, message }) {
                 ? `This message wiil be visible only from ${formatEpochToDate(
                     from
                   )} to ${formatEpochToDate(to)}`
-                : `This message wiil be deleted in ${
-                    to - Math.floor(Date.now() / 1000)
-                  } seconds`
+                : `This message will be deleted in ${
+                    to - currentTime > 0
+                      ? `${to - currentTime} in seconds`
+                      : `${Math.abs(to - currentTime)} seconds ago`
+                  }`
             }
           >
             {emoji}

@@ -20,9 +20,13 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
+import { encryptMessage } from "../../utils";
 
 const HomeScreen = () => {
   const currentDateTime = dayjs();
+
+  const srcollRef = useRef();
+
   const { user, isFetching, error, dispatch } = useContext(AuthContext);
 
   const [isUnlocked, setIsUnlocked] = useState(true);
@@ -210,11 +214,19 @@ const HomeScreen = () => {
     console.log(type);
     console.log(funcAttributes);
 
+    // Encrypt the message using conversationId as the secretKey
+    const encryptedMessageText = encryptMessage(
+      messageText,
+      selectedConversation._id
+    );
+
+    console.log("encrypted message", encryptedMessageText);
+
     let messagePayload;
 
     if (type === "STANDARD") {
       messagePayload = {
-        text: messageText,
+        text: encryptedMessageText,
         senderId: user.id,
         conversationId: selectedConversation._id,
         messageType: {
@@ -226,9 +238,20 @@ const HomeScreen = () => {
         },
       };
     }
+    if (type === "SELF_DESTRUCT_TIMED") {
+      messagePayload = {
+        text: encryptedMessageText,
+        senderId: user.id,
+        conversationId: selectedConversation._id,
+        messageType: {
+          messageFunc: 1,
+          funcAttributes: funcAttributes,
+        },
+      };
+    }
     if (type === "LIMITED_VIEW_TIME") {
       messagePayload = {
-        text: messageText,
+        text: encryptedMessageText,
         senderId: user.id,
         conversationId: selectedConversation._id,
         messageType: {
@@ -270,6 +293,30 @@ const HomeScreen = () => {
     console.log(messageAttributes);
     sendMessage(messageAttributes);
   };
+
+  const selfDestructMessageModalRef = useRef(null);
+  const openselfDestructMessageModal = () => {
+    const modal = new window.bootstrap.Modal(
+      selfDestructMessageModalRef.current
+    );
+    modal.show();
+  };
+
+  const [selfDestructTimer, setSelfDestructTimer] = useState(0);
+  const sendSelfDestructMessage = () => {
+    const messageAttributes = {
+      type: "SELF_DESTRUCT_TIMED",
+      funcAttributes: {
+        from: Math.floor(Date.now() / 1000),
+        to: Math.floor(Date.now() / 1000) + parseInt(selfDestructTimer),
+      },
+    };
+    sendMessage(messageAttributes);
+  };
+
+  useEffect(() => {
+    srcollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messagesByConversation]);
 
   return (
     <div>
@@ -480,7 +527,11 @@ const HomeScreen = () => {
               <div className="chatBoxTop">
                 {messagesByConversation?.messages?.map((message) => {
                   const isOwn = message.senderId === user.id;
-                  return <Message own={isOwn} message={message} />;
+                  return (
+                    <div ref={srcollRef}>
+                      <Message own={isOwn} message={message} />
+                    </div>
+                  );
                 })}
               </div>
               <hr />
@@ -589,9 +640,71 @@ const HomeScreen = () => {
                   type="button"
                   id="self-destruct"
                   className="btn btn-primary sendBtn"
+                  onClick={openselfDestructMessageModal}
                 >
                   Send Self Destruct Message
                 </button>
+                <div
+                  className="modal fade"
+                  id="sendLimitedViewTimeModal"
+                  data-bs-backdrop="static"
+                  tabIndex="-1"
+                  aria-labelledby="unlockConvModal"
+                  aria-hidden="true"
+                  ref={selfDestructMessageModalRef}
+                >
+                  <div className="modal-dialog">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title" id="exampleModalLabel">
+                          Send Self Destruct Message
+                        </h5>
+                        <button
+                          type="button"
+                          className="btn-close"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"
+                        ></button>
+                      </div>
+                      <div className="set-time">
+                        <p className="form-description">
+                          Please set the timer to send Self Destruct Message
+                        </p>
+                        <div className="form-control">
+                          <input
+                            type="number"
+                            class="form-control"
+                            id="exampleFormControlInput1"
+                            placeholder="Add timer in seconds..."
+                            onChange={(e) =>
+                              setSelfDestructTimer(e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="modal-footer">
+                        <button
+                          type="button"
+                          className="sendBtn w-100"
+                          data-bs-dismiss="modal"
+                          data-bs-target="#staticBackdrop"
+                          onClick={sendSelfDestructMessage}
+                        >
+                          Send Message
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary w-100"
+                          data-bs-dismiss="modal"
+                          onClick={closeUnlockConversationModal}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
