@@ -121,7 +121,6 @@ const HomeScreen = () => {
     }
 
     if (isErrorUnlockConversation) {
-      console.log("Error unlocked conversation");
       setUnlockPinErrorSnackBarOpen(true);
       // alert("Failed to unlock conversation. Please try again.");
       // closeUnlockConversationModal();
@@ -234,16 +233,11 @@ const HomeScreen = () => {
   const sendMessage = (messageAttributes) => {
     const { type, funcAttributes } = messageAttributes;
 
-    console.log(type);
-    console.log(funcAttributes);
-
     // Encrypt the message using conversationId as the secretKey
     const encryptedMessageText = encryptMessage(
       messageText,
       selectedConversation._id
     );
-
-    console.log("encrypted message", encryptedMessageText);
 
     let messagePayload;
 
@@ -283,7 +277,6 @@ const HomeScreen = () => {
         },
       };
     }
-    console.log(messagePayload);
 
     if (!messagePayload) {
       alert("Please enter a message.");
@@ -313,7 +306,6 @@ const HomeScreen = () => {
       },
     };
 
-    console.log(messageAttributes);
     sendMessage(messageAttributes);
   };
 

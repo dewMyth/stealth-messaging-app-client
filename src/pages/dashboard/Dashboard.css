@@ -21,8 +21,7 @@
 .r-top {
     flex: 1;
     padding: 30px;
-    height: 50%;
-    overflow: scroll;
+    overflow-y: scroll !important;
 }
 
 .r-bottom {

@@ -154,7 +154,7 @@
 
 /* Styling for the scrollbar */
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 3px;
     /* Width of the scrollbar */
 }
 

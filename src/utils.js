@@ -19,9 +19,6 @@ export const encryptMessage = (text, secretKey) => {
 };
 
 export const decryptMessage = (encryptedText, secretKey) => {
-  console.log("dec", encryptedText);
-  console.log("dec key", secretKey);
-
   // Decrypt
   var decryptedMessage = CryptoJS.AES.decrypt(
     encryptedText,

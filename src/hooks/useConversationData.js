@@ -155,7 +155,11 @@ const getRemovedConvByUser = async (userId) => {
     baseUrl + `conversations/deleted-conversations/${userId}`
   );
   console.log(response.data);
-  return response.data;
+  if (!response?.data) {
+    return [];
+  } else {
+    return response.data;
+  }
 };
 
 export const useGetRemovedConvByUser = (userId) => {
@@ -163,5 +167,46 @@ export const useGetRemovedConvByUser = (userId) => {
     queryKey: ["deletedConversations", userId],
     queryFn: () => getRemovedConvByUser(userId),
     enabled: !!userId, // Only run query if userId is available
+  });
+};
+
+const sendConversationUnlockRequest = async (data) => {
+  const response = await axios.post(
+    baseUrl + "conversations/request-unlock-deleted-conversations",
+    data
+  );
+  return response.data;
+};
+
+export const useSendConversationUnlockRequest = () => {
+  return useMutation({
+    mutationFn: sendConversationUnlockRequest,
+    onError: (err) => {
+      if (err.response) {
+        throw err.response.data.message;
+      } else {
+        throw err.message; // re-throw the error
+      }
+    },
+  });
+};
+
+const recoverConversation = async (data) => {
+  const response = await axios.post(
+    baseUrl + "conversations/recover-deleted-conversations",
+    data
+  );
+};
+
+export const useRecoverConversation = () => {
+  return useMutation({
+    mutationFn: recoverConversation,
+    onError: (err) => {
+      if (err.response) {
+        throw err.response.data.message;
+      } else {
+        throw err.message; // re-throw the error
+      }
+    },
   });
 };

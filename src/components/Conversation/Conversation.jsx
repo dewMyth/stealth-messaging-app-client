@@ -1,9 +1,11 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import "./Conversation.css";
 import ContactIcon from "../../assets/contact";
 import { useGetUserById } from "../../hooks/useUserData";
 import { AuthContext } from "../../context/AuthContext";
 import { Button, Box } from "@mui/material";
+import { useSendConversationUnlockRequest } from "../../hooks/useConversationData";
+import Snackbar from "@mui/material/Snackbar";
 
 export default function Conversation({
   isOnline,
@@ -23,6 +25,30 @@ export default function Conversation({
     isLoading: isLoadingAllConversations,
     isError: isErrorAllConversations,
   } = useGetUserById(otherMemberId);
+
+  const {
+    mutate: sendUnlockConversation,
+    isLoading: isLoadingUnlockConversation,
+    isError: isErrorUnlockConversation,
+    isSuccess: isSuccessUnlockConversation,
+    error: unlockConversationError,
+  } = useSendConversationUnlockRequest();
+
+  const [isDeleteRequestSent, setIsDeleteRequestSent] = useState(false);
+
+  const sendUnlockRequest = () => {
+    const data = {
+      conversationId: conversationData._id,
+      userId: user.id,
+    };
+    sendUnlockConversation(data);
+  };
+
+  useEffect(() => {
+    if (isSuccessUnlockConversation) {
+      setIsDeleteRequestSent(true);
+    }
+  }, [isSuccessUnlockConversation]);
 
   return (
     <div className="conversation" onClick={onClick}>
@@ -54,12 +80,29 @@ export default function Conversation({
       <div className="conv-right">
         {deleted ? (
           <>
-            <Button variant="text">Restore</Button>
+            {isDeleteRequestSent ? (
+              <Button variant="text" disabled>
+                Restore
+              </Button>
+            ) : (
+              <Button variant="text" onClick={sendUnlockRequest}>
+                Restore
+              </Button>
+            )}
           </>
         ) : (
           ""
         )}
       </div>
+
+      <Snackbar
+        open={isDeleteRequestSent}
+        autoHideDuration={6000}
+        onClose={() => {
+          console.log("");
+        }}
+        message="Recovery Request Sent! Please Check your email."
+      />
     </div>
   );
 }

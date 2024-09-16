@@ -14,6 +14,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import React, { useContext } from "react";
 import Dashboard from "./pages/dashboard/Dashboard";
+import RecoverConversation from "./pages/RecoverConversation/RecoverConversation";
 
 function App() {
   const queryClient = new QueryClient();
@@ -39,6 +40,12 @@ function App() {
                 element={!user ? <SignUp /> : <Navigate to="/" />}
               />
               <Route path="/verify-user" element={<VerifyUser />} />
+              <Route
+                path="/recover-conversation/:token"
+                element={
+                  user ? <RecoverConversation /> : <Navigate to="/login" />
+                }
+              />
               <Route
                 path="/dashboard"
                 element={user ? <Dashboard /> : <Navigate to="/" />}

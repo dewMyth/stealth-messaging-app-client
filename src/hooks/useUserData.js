@@ -15,7 +15,6 @@ export const useAddUser = () => {
   return useMutation({
     mutationFn: addNewUser,
     onError: (err) => {
-      console.log(err);
       if (err.response) {
         throw err.response.data.message;
       } else {

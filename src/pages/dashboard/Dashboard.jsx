@@ -14,7 +14,10 @@ import { Button, Box } from "@mui/material";
 import { useGetAllLogsByUser } from "../../hooks/useLogs";
 import Conversation from "../../components/Conversation/Conversation";
 
-import { useGetRemovedConvByUser } from "../../hooks/useConversationData";
+import {
+  useGetRemovedConvByUser,
+  useSendConversationUnlockRequest,
+} from "../../hooks/useConversationData";
 
 import * as XLSX from "xlsx";
 
@@ -74,8 +77,6 @@ export default function Dashboard() {
     isError: isErrorRemovedConvByUser,
   } = useGetRemovedConvByUser(user?.id);
 
-  console.log(removedConvByUser);
-
   const exportRows = allLogsByUser?.map((row, index) => ({
     "Row Number": index + 1,
     "Log Id": row.id,
@@ -122,6 +123,7 @@ export default function Dashboard() {
             <h5>Recover Deleted Conversations</h5>
             <hr />
             <div className="r-top-content">{/* <Conversation /> */}</div>
+            {console.log("length", removedConvByUser?.length)}
             {removedConvByUser?.length == 0 ? (
               <div className="">No Records</div>
             ) : (
