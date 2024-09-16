@@ -409,14 +409,15 @@ const HomeScreen = () => {
                       {allUsers?.map((user) => {
                         return (
                           <li className="list-group-item" key={user?._id}>
-                            <button
+                            <Button
+                              variant="outlined"
                               onClick={() => handleCreateConversation(user)}
                             >
-                              {user?.userName}
+                              {user?.userName}{" "}
                               <span style={{ fontSize: "10px" }}>
-                                {user?.email}
+                                ({user?.email})
                               </span>
-                            </button>
+                            </Button>
                           </li>
                         );
                       })}

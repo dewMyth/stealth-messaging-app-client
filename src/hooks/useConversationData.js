@@ -53,8 +53,15 @@ const createConversation = async (members) => {
 };
 
 export const useCreateConversation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createConversation,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries([
+        "conversations",
+        "getAllConversationsByUser",
+      ]);
+    },
     onError: (err) => {
       if (err.response) {
         throw err.response.data.message;
