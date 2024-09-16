@@ -29,6 +29,7 @@ import { encryptMessage } from "../../utils";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Snackbar from "@mui/material/Snackbar";
 import { useNavigate } from "react-router-dom";
 
 const HomeScreen = () => {
@@ -70,6 +71,7 @@ const HomeScreen = () => {
     );
     if (modal) {
       modal.hide();
+      setUnlockPinErrorSnackBarOpen(false);
     }
   };
 
@@ -103,6 +105,9 @@ const HomeScreen = () => {
     unlockConversationMutation(unlockData);
   };
 
+  const [unlockPinErrorSnackBarOpen, setUnlockPinErrorSnackBarOpen] =
+    useState(false);
+
   useEffect(() => {
     if (isSuccessUnlockConversation) {
       if (unlockedConversationsList.includes(selectedConversation._id)) {
@@ -116,8 +121,10 @@ const HomeScreen = () => {
     }
 
     if (isErrorUnlockConversation) {
-      alert("Failed to unlock conversation. Please try again.");
-      closeUnlockConversationModal();
+      console.log("Error unlocked conversation");
+      setUnlockPinErrorSnackBarOpen(true);
+      // alert("Failed to unlock conversation. Please try again.");
+      // closeUnlockConversationModal();
     }
   }, [isSuccessUnlockConversation, isErrorUnlockConversation]);
 
@@ -219,6 +226,10 @@ const HomeScreen = () => {
     data: createMessageData,
     error: createMessageError,
   } = useCreateMessage();
+
+  useEffect(() => {
+    setMessageText("");
+  }, [isSuccessMessage]);
 
   const sendMessage = (messageAttributes) => {
     const { type, funcAttributes } = messageAttributes;
@@ -534,7 +545,7 @@ const HomeScreen = () => {
                     <button
                       type="button"
                       className="sendBtn w-100"
-                      data-bs-dismiss="modal"
+                      // data-bs-dismiss="modal"
                       data-bs-target="#staticBackdrop"
                       onClick={sendUnlockConversationRequest}
                     >
@@ -549,6 +560,15 @@ const HomeScreen = () => {
                       Close
                     </button>
                   </div>
+
+                  <Snackbar
+                    open={unlockPinErrorSnackBarOpen}
+                    autoHideDuration={6000}
+                    onClose={() => {
+                      console.log("closed");
+                    }}
+                    message="Wrong PIN!, please try again"
+                  />
                 </div>
               </div>
             </div>
@@ -578,6 +598,7 @@ const HomeScreen = () => {
                   className="form-control"
                   placeholder="Write Something..."
                   rows={5}
+                  value={messageText}
                   onChange={(e, index) => handleMessageChange(e, index)}
                 ></textarea>
               </div>
