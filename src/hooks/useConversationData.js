@@ -142,3 +142,19 @@ export const useRemoveConversation = () => {
     },
   });
 };
+
+const getRemovedConvByUser = async (userId) => {
+  const response = await axios.get(
+    baseUrl + `conversations/deleted-conversations/${userId}`
+  );
+  console.log(response.data);
+  return response.data;
+};
+
+export const useGetRemovedConvByUser = (userId) => {
+  return useQuery({
+    queryKey: ["deletedConversations", userId],
+    queryFn: () => getRemovedConvByUser(userId),
+    enabled: !!userId, // Only run query if userId is available
+  });
+};

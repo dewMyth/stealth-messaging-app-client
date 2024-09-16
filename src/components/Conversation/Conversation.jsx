@@ -3,8 +3,14 @@ import "./Conversation.css";
 import ContactIcon from "../../assets/contact";
 import { useGetUserById } from "../../hooks/useUserData";
 import { AuthContext } from "../../context/AuthContext";
+import { Button, Box } from "@mui/material";
 
-export default function Conversation({ isOnline, onClick, conversationData }) {
+export default function Conversation({
+  isOnline,
+  onClick,
+  conversationData,
+  deleted,
+}) {
   const { members } = conversationData;
 
   const { user } = useContext(AuthContext);
@@ -20,28 +26,40 @@ export default function Conversation({ isOnline, onClick, conversationData }) {
 
   return (
     <div className="conversation" onClick={onClick}>
-      {/* <img
+      <div className="conv-left">
+        {/* <img
         className="conversationImg"
         src="https://amreckenya.org/wp-content/uploads/2020/11/403022_business-man_male_user_avatar_profile_icon-1.png"
         alt=""
       /> */}
-      <ContactIcon />
-      <span className="conversationName mx-2">
-        {friendData?.userName}
-        {isOnline ? (
-          <span
-            style={{
-              fontSize: "7px", // Smaller circle
-              verticalAlign: "middle", // Align with text
-              marginLeft: "5px", // Optional: spacing between text and circle
-            }}
-          >
-            🟢
-          </span>
+        <ContactIcon />
+        <span className="conversationName mx-2">
+          {friendData?.userName}
+          {!deleted && isOnline ? (
+            <span
+              style={{
+                fontSize: "7px", // Smaller circle
+                verticalAlign: "middle", // Align with text
+                marginLeft: "5px", // Optional: spacing between text and circle
+              }}
+            >
+              🟢
+            </span>
+          ) : (
+            ""
+          )}
+        </span>
+      </div>
+
+      <div className="conv-right">
+        {deleted ? (
+          <>
+            <Button variant="text">Restore</Button>
+          </>
         ) : (
           ""
         )}
-      </span>
+      </div>
     </div>
   );
 }

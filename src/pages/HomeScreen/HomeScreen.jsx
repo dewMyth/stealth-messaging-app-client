@@ -5,6 +5,7 @@ import "./HomeScreen.css";
 import Conversation from "../../components/Conversation/Conversation";
 import Message from "../../components/Message/Message";
 import WelcomeMessage from "../../components/WelcomeMessage/WelcomeMessage";
+import Header from "../../components/Header/Header";
 import { AuthContext } from "../../context/AuthContext";
 import {
   useCreateConversation,
@@ -33,7 +34,7 @@ import { useNavigate } from "react-router-dom";
 const HomeScreen = () => {
   const currentDateTime = dayjs();
 
-  const naviagte = useNavigate();
+  const navigate = useNavigate();
 
   const srcollRef = useRef();
 
@@ -92,6 +93,7 @@ const HomeScreen = () => {
     const unlockData = {
       conversationId: selectedConversation._id,
       enteredPIN: code.join(""),
+      userId: user.id,
     };
     if (!unlockData) {
       alert("Please enter a valid PIN");
@@ -345,59 +347,22 @@ const HomeScreen = () => {
 
   const handleDelete = (conv) => {
     if (selectedConversation) {
-      removeConversationMutation({ conversationId: conv._id });
+      removeConversationMutation({ conversationId: conv._id, userId: user.id });
       setAnchorEl(null);
     }
   };
 
+  useEffect(() => {
+    if (isSuccessRemoveConversation) {
+      setAnchorEl(null);
+      setSelectedConversation(null);
+    }
+  }, [isSuccessRemoveConversation, selectedConversation]);
+
   return (
     <div>
       {/* Header */}
-      <div>
-        <header className="header bg-dark text-white">
-          <div
-            className="header-wrapper d-flex align-items-center justify-content-between"
-            style={{ height: "40px" }}
-          >
-            <span
-              className="px-3 text-left"
-              style={{
-                fontFamily: "Noto Sans",
-                fontSize: "18px",
-                fontWeight: "bold",
-              }}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "15px" }}
-              >
-                mark_unread_chat_alt
-              </span>
-              <span className="px-2">
-                Stealth Messaging App ( {user.userName} )
-              </span>
-            </span>
-
-            <button
-              className="btn btn-sm me-3"
-              style={{
-                color: "white",
-                fontFamily: "Noto Sans",
-                fontSize: "14px",
-                fontWeight: "bold",
-              }}
-              onClick={() => {
-                dispatch({ type: "LOGOUT" });
-                window.localStorage.removeItem("user");
-                window.location.href = "/";
-              }}
-            >
-              <span class="material-symbols-outlined">logout</span>
-            </button>
-          </div>
-        </header>
-      </div>
-
+      <Header />
       {/* Header */}
       <div className="home-screen">
         <div className="chatMenu">
