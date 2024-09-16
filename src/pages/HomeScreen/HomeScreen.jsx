@@ -1,15 +1,18 @@
 // HomeScreen.js
-import React, { useState, useRef, useContext, useEffect } from "react";
+import * as React from "react";
+import { useState, useRef, useContext, useEffect } from "react";
 import "./HomeScreen.css";
 import Conversation from "../../components/Conversation/Conversation";
 import Message from "../../components/Message/Message";
 import WelcomeMessage from "../../components/WelcomeMessage/WelcomeMessage";
+import Header from "../../components/Header/Header";
 import { AuthContext } from "../../context/AuthContext";
 import {
   useCreateConversation,
   useCreateMessage,
   useGetAllConversationsByUser,
   useGetMessagesByConversation,
+  useRemoveConversation,
   useUnlockConversation,
 } from "../../hooks/useConversationData";
 import ContactIcon from "../../assets/contact";
@@ -22,8 +25,17 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
 import { encryptMessage } from "../../utils";
 
+// mUI
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Snackbar from "@mui/material/Snackbar";
+import { useNavigate } from "react-router-dom";
+
 const HomeScreen = () => {
   const currentDateTime = dayjs();
+
+  const navigate = useNavigate();
 
   const srcollRef = useRef();
 
@@ -59,6 +71,7 @@ const HomeScreen = () => {
     );
     if (modal) {
       modal.hide();
+      setUnlockPinErrorSnackBarOpen(false);
     }
   };
 
@@ -82,6 +95,7 @@ const HomeScreen = () => {
     const unlockData = {
       conversationId: selectedConversation._id,
       enteredPIN: code.join(""),
+      userId: user.id,
     };
     if (!unlockData) {
       alert("Please enter a valid PIN");
@@ -90,6 +104,9 @@ const HomeScreen = () => {
 
     unlockConversationMutation(unlockData);
   };
+
+  const [unlockPinErrorSnackBarOpen, setUnlockPinErrorSnackBarOpen] =
+    useState(false);
 
   useEffect(() => {
     if (isSuccessUnlockConversation) {
@@ -104,8 +121,9 @@ const HomeScreen = () => {
     }
 
     if (isErrorUnlockConversation) {
-      alert("Failed to unlock conversation. Please try again.");
-      closeUnlockConversationModal();
+      setUnlockPinErrorSnackBarOpen(true);
+      // alert("Failed to unlock conversation. Please try again.");
+      // closeUnlockConversationModal();
     }
   }, [isSuccessUnlockConversation, isErrorUnlockConversation]);
 
@@ -130,7 +148,7 @@ const HomeScreen = () => {
     data: allConversationsByUser,
     isLoading: isLoadingAllConversations,
     isError: isErrorAllConversations,
-  } = useGetAllConversationsByUser(user.id);
+  } = useGetAllConversationsByUser(user?.id);
 
   // Get Messages By Conversation
   const {
@@ -147,7 +165,7 @@ const HomeScreen = () => {
     data: allUsers,
     isLoading: isLoadingUsers,
     isError: isErrorUsers,
-  } = useGetAllUsers(user.id);
+  } = useGetAllUsers(user?.id);
 
   const {
     mutate: createConversationMutate,
@@ -208,19 +226,18 @@ const HomeScreen = () => {
     error: createMessageError,
   } = useCreateMessage();
 
+  useEffect(() => {
+    setMessageText("");
+  }, [isSuccessMessage]);
+
   const sendMessage = (messageAttributes) => {
     const { type, funcAttributes } = messageAttributes;
-
-    console.log(type);
-    console.log(funcAttributes);
 
     // Encrypt the message using conversationId as the secretKey
     const encryptedMessageText = encryptMessage(
       messageText,
       selectedConversation._id
     );
-
-    console.log("encrypted message", encryptedMessageText);
 
     let messagePayload;
 
@@ -260,7 +277,6 @@ const HomeScreen = () => {
         },
       };
     }
-    console.log(messagePayload);
 
     if (!messagePayload) {
       alert("Please enter a message.");
@@ -290,7 +306,6 @@ const HomeScreen = () => {
       },
     };
 
-    console.log(messageAttributes);
     sendMessage(messageAttributes);
   };
 
@@ -318,53 +333,39 @@ const HomeScreen = () => {
     srcollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesByConversation]);
 
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const {
+    mutate: removeConversationMutation,
+    isLoading: isLoadingRemoveConversation,
+    isSuccess: isSuccessRemoveConversation,
+    isError: isErrorRemoveConversation,
+    data: dataRemoveConversation,
+    error: errorRemoveConversation,
+  } = useRemoveConversation();
+
+  const handleDelete = (conv) => {
+    if (selectedConversation) {
+      removeConversationMutation({ conversationId: conv._id, userId: user.id });
+      setAnchorEl(null);
+    }
+  };
+
+  useEffect(() => {
+    if (isSuccessRemoveConversation) {
+      setAnchorEl(null);
+      setSelectedConversation(null);
+    }
+  }, [isSuccessRemoveConversation, selectedConversation]);
+
   return (
     <div>
       {/* Header */}
-      <div>
-        <header className="header bg-dark text-white">
-          <div
-            className="header-wrapper d-flex align-items-center justify-content-between"
-            style={{ height: "40px" }}
-          >
-            <span
-              className="px-3 text-left"
-              style={{
-                fontFamily: "Noto Sans",
-                fontSize: "18px",
-                fontWeight: "bold",
-              }}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "15px" }}
-              >
-                mark_unread_chat_alt
-              </span>
-              <span className="px-2">
-                Stealth Messaging App ( {user.userName} )
-              </span>
-            </span>
-
-            <button
-              className="btn btn-sm me-3"
-              style={{
-                color: "white",
-                fontFamily: "Noto Sans",
-                fontSize: "14px",
-                fontWeight: "bold",
-              }}
-              onClick={() => {
-                dispatch({ type: "LOGOUT" });
-                window.location.reload();
-              }}
-            >
-              <span class="material-symbols-outlined">logout</span>
-            </button>
-          </div>
-        </header>
-      </div>
-
+      <Header />
       {/* Header */}
       <div className="home-screen">
         <div className="chatMenu">
@@ -400,14 +401,15 @@ const HomeScreen = () => {
                       {allUsers?.map((user) => {
                         return (
                           <li className="list-group-item" key={user?._id}>
-                            <button
+                            <Button
+                              variant="outlined"
                               onClick={() => handleCreateConversation(user)}
                             >
-                              {user?.userName}
+                              {user?.userName}{" "}
                               <span style={{ fontSize: "10px" }}>
-                                {user?.email}
+                                ({user?.email})
                               </span>
-                            </button>
+                            </Button>
                           </li>
                         );
                       })}
@@ -437,14 +439,52 @@ const HomeScreen = () => {
             />
             {allConversationsByUser?.conversations?.map((conv) => {
               return (
-                <Conversation
-                  key={conv.id}
-                  // onClick={openUnlockConversationModal}
+                <div
+                  className="chat-list-item"
                   onClick={() => {
                     openUnlockConversationModal(conv);
                   }}
-                  conversationData={conv}
-                />
+                >
+                  <Conversation
+                    key={conv.id}
+                    // onClick={openUnlockConversationModal}
+                    conversationData={conv}
+                  />
+
+                  <div>
+                    <Button
+                      id="basic-button"
+                      aria-controls={open ? "basic-menu" : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={open ? "true" : undefined}
+                      onClick={handleClick}
+                    >
+                      <span
+                        class="material-symbols-outlined"
+                        style={{ color: "black" }}
+                      >
+                        more_vert
+                      </span>
+                    </Button>
+                    <Menu
+                      id="basic-menu"
+                      anchorEl={anchorEl}
+                      open={open}
+                      onClose={() => setAnchorEl(null)}
+                      MenuListProps={{
+                        "aria-labelledby": "basic-button",
+                      }}
+                    >
+                      <MenuItem onClick={() => handleDelete(conv)}>
+                        Delete
+                      </MenuItem>
+                    </Menu>
+                  </div>
+
+                  {/* <button className="btn">
+                    <span class="material-symbols-outlined">more_vert</span>
+                  </button> */}
+                </div>
               );
             })}
             {/* Unlock Conversation Modal */}
@@ -498,7 +538,7 @@ const HomeScreen = () => {
                     <button
                       type="button"
                       className="sendBtn w-100"
-                      data-bs-dismiss="modal"
+                      // data-bs-dismiss="modal"
                       data-bs-target="#staticBackdrop"
                       onClick={sendUnlockConversationRequest}
                     >
@@ -513,6 +553,15 @@ const HomeScreen = () => {
                       Close
                     </button>
                   </div>
+
+                  <Snackbar
+                    open={unlockPinErrorSnackBarOpen}
+                    autoHideDuration={6000}
+                    onClose={() => {
+                      console.log("closed");
+                    }}
+                    message="Wrong PIN!, please try again"
+                  />
                 </div>
               </div>
             </div>
@@ -542,6 +591,7 @@ const HomeScreen = () => {
                   className="form-control"
                   placeholder="Write Something..."
                   rows={5}
+                  value={messageText}
                   onChange={(e, index) => handleMessageChange(e, index)}
                 ></textarea>
               </div>

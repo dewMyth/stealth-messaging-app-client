@@ -128,9 +128,33 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 } */
 
+.chat-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Align items vertically */
+    margin: 2px;
+    /* background-color: lightblue; */
+}
+
+.chat-list-item:hover {
+    background-color: rgb(243, 237, 237);
+    border-radius: 30px;
+}
+
+.chat-list-item div {
+    display: flex;
+    align-items: center;
+}
+
+.material-symbols-outlined {
+    vertical-align: middle;
+    /* Ensures the icon is aligned properly */
+}
+
 /* Styling for the scrollbar */
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 3px;
     /* Width of the scrollbar */
 }
 

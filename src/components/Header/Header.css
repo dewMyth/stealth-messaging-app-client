@@ -1,0 +1,6 @@
+.text-left:hover{
+    background-color: #36454F;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 100px;
+}
