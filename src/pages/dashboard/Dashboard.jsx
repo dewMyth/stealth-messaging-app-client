@@ -14,7 +14,11 @@ import { Button, Box } from "@mui/material";
 import { useGetAllLogsByUser } from "../../hooks/useLogs";
 import Conversation from "../../components/Conversation/Conversation";
 
+import { BarChart } from "@mui/x-charts/BarChart";
+import { axisClasses } from "@mui/x-charts/ChartsAxis";
+
 import {
+  useGetLastThreeDaysMessageCount,
   useGetRemovedConvByUser,
   useSendConversationUnlockRequest,
 } from "../../hooks/useConversationData";
@@ -85,6 +89,54 @@ export default function Dashboard() {
     "Log Time": row.time,
   }));
 
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const {
+    data: lastThreeDaysMessageCount,
+    isLoading: isLoadingLastThreeDaysMessageCount,
+    isSuccess: isSuccessLastThreeDaysMessageCount,
+    isError: isErrorLastThreeDaysMessageCount,
+  } = useGetLastThreeDaysMessageCount(user?.id);
+
+  useEffect(() => {
+    if (isSuccessRemovedConvByUser) {
+      setDataLoaded(true);
+    }
+  }, [isSuccessLastThreeDaysMessageCount]);
+
+  const dataset = [
+    {
+      std: 59,
+      lvt: 57,
+      sd: 86,
+      date: "9/17",
+    },
+    {
+      std: 50,
+      lvt: 52,
+      sd: 78,
+      date: "9/16",
+    },
+    {
+      std: 47,
+      lvt: 53,
+      sd: 106,
+      date: "9/15",
+    },
+  ];
+
+  const chartSetting = {
+    yAxis: [
+      {
+        label: "Message Count",
+      },
+    ],
+    width: 500,
+    height: 300,
+    sx: {
+      [`.${axisClasses.left} .${axisClasses.label}`]: {},
+    },
+  };
+
   return (
     <>
       <Header />
@@ -140,7 +192,22 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <div className="r-bottom">bottom</div>
+          <div className="r-bottom">
+            <h4>Your Recent Message Activity for last 3 days</h4>
+            <hr />
+            <Paper elevation={3}>
+              <BarChart
+                dataset={dataLoaded ? lastThreeDaysMessageCount : []}
+                xAxis={[{ scaleType: "band", dataKey: "date" }]}
+                series={[
+                  { dataKey: "std", label: "Standard" },
+                  { dataKey: "lvt", label: "Limited View Time" },
+                  { dataKey: "sd", label: "Self Destruct" },
+                ]}
+                {...chartSetting}
+              />
+            </Paper>
+          </div>
         </div>
       </div>
     </>
