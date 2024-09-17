@@ -437,56 +437,27 @@ const HomeScreen = () => {
               id="search"
               placeholder="Search for a chat"
             />
-            {allConversationsByUser?.conversations?.map((conv) => {
-              return (
-                <div
-                  className="chat-list-item"
-                  onClick={() => {
-                    openUnlockConversationModal(conv);
-                  }}
-                >
-                  <Conversation
-                    key={conv.id}
-                    // onClick={openUnlockConversationModal}
-                    conversationData={conv}
-                  />
-
-                  <div>
-                    <Button
-                      id="basic-button"
-                      aria-controls={open ? "basic-menu" : undefined}
-                      aria-haspopup="true"
-                      aria-expanded={open ? "true" : undefined}
-                      onClick={handleClick}
-                    >
-                      <span
-                        class="material-symbols-outlined"
-                        style={{ color: "black" }}
-                      >
-                        more_vert
-                      </span>
-                    </Button>
-                    <Menu
-                      id="basic-menu"
-                      anchorEl={anchorEl}
-                      open={open}
-                      onClose={() => setAnchorEl(null)}
-                      MenuListProps={{
-                        "aria-labelledby": "basic-button",
-                      }}
-                    >
-                      <MenuItem onClick={() => handleDelete(conv)}>
-                        Delete
-                      </MenuItem>
-                    </Menu>
+            <div className="chat-item-list mt-3">
+              {allConversationsByUser?.conversations?.map((conv) => {
+                return (
+                  <div
+                    onClick={() => {
+                      openUnlockConversationModal(conv);
+                    }}
+                  >
+                    <div className="chat-item m-2">
+                      <Conversation
+                        key={conv.id}
+                        // onClick={openUnlockConversationModal}
+                        conversationData={conv}
+                        unlockedConversationsList={unlockedConversationsList}
+                      />
+                    </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* <button className="btn">
-                    <span class="material-symbols-outlined">more_vert</span>
-                  </button> */}
-                </div>
-              );
-            })}
             {/* Unlock Conversation Modal */}
             <div
               className="modal fade"
