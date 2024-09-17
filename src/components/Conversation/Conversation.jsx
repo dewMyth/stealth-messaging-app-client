@@ -4,20 +4,54 @@ import ContactIcon from "../../assets/contact";
 import { useGetUserById } from "../../hooks/useUserData";
 import { AuthContext } from "../../context/AuthContext";
 import { Button, Box } from "@mui/material";
-import { useSendConversationUnlockRequest } from "../../hooks/useConversationData";
+import {
+  useRemoveConversation,
+  useSendConversationUnlockRequest,
+} from "../../hooks/useConversationData";
 import Snackbar from "@mui/material/Snackbar";
+
+import ListItem from "@mui/material/ListItem";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemText from "@mui/material/ListItemText";
+import Avatar from "@mui/material/Avatar";
+import IconButton from "@mui/material/IconButton";
+import ContactMailIcon from "@mui/icons-material/ContactMail";
+import DeleteIcon from "@mui/icons-material/Delete";
+import RestoreIcon from "@mui/icons-material/Restore";
+import LockIcon from "@mui/icons-material/Lock";
+
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 export default function Conversation({
   isOnline,
   onClick,
   conversationData,
   deleted,
+  unlockedConversationsList,
 }) {
   const { members } = conversationData;
 
   const { user } = useContext(AuthContext);
 
   const otherMemberId = members.find((member) => member !== user.id);
+
+  console.log("unlocke vonc list in conv", unlockedConversationsList);
+
+  const [showDeleteIcon, setShowDeleteIcon] = useState(false);
+
+  useEffect(() => {
+    if (unlockedConversationsList?.length) {
+      // Find this conversation in unlockedConversationsList
+      const isInclude = unlockedConversationsList.includes(
+        conversationData._id
+      );
+      setShowDeleteIcon(isInclude);
+    }
+  }, [unlockedConversationsList]);
 
   // Get Other Member's data from Conversation data passed in
   const {
@@ -47,53 +81,73 @@ export default function Conversation({
   useEffect(() => {
     if (isSuccessUnlockConversation) {
       setIsDeleteRequestSent(true);
+      setIsDeleteOpen(false);
     }
   }, [isSuccessUnlockConversation]);
 
+  const {
+    mutate: removeConversationMutation,
+    isLoading: isLoadingRemoveConversation,
+    isSuccess: isSuccessRemoveConversation,
+    isError: isErrorRemoveConversation,
+    data: dataRemoveConversation,
+    error: errorRemoveConversation,
+  } = useRemoveConversation();
+
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const handleDelete = () => {
+    setIsDeleteOpen(true);
+  };
+
+  useEffect(() => {
+    if (isSuccessRemoveConversation) {
+      handleDelete();
+    }
+  }, []);
+
+  // const [secondary, setSecondary] = React.useState(true);
+
   return (
-    <div className="conversation" onClick={onClick}>
-      <div className="conv-left">
-        {/* <img
-        className="conversationImg"
-        src="https://amreckenya.org/wp-content/uploads/2020/11/403022_business-man_male_user_avatar_profile_icon-1.png"
-        alt=""
-      /> */}
-        <ContactIcon />
-        <span className="conversationName mx-2">
-          {friendData?.userName}
-          {!deleted && isOnline ? (
-            <span
-              style={{
-                fontSize: "7px", // Smaller circle
-                verticalAlign: "middle", // Align with text
-                marginLeft: "5px", // Optional: spacing between text and circle
+    <div className="chat-item">
+      <ListItem
+        secondaryAction={
+          deleted ? (
+            <IconButton
+              sx={{ color: "black" }}
+              color="inherit"
+              onClick={(event) => {
+                event.stopPropagation();
+                // Stop the event from bubbling up to the parent div
+                handleDelete();
               }}
             >
-              🟢
-            </span>
+              <RestoreIcon />
+            </IconButton>
+          ) : showDeleteIcon ? (
+            <IconButton
+              sx={{ color: "black" }}
+              color="inherit"
+              onClick={(event) => {
+                handleDelete();
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
           ) : (
-            ""
-          )}
-        </span>
-      </div>
-
-      <div className="conv-right">
-        {deleted ? (
-          <>
-            {isDeleteRequestSent ? (
-              <Button variant="text" disabled>
-                Restore
-              </Button>
-            ) : (
-              <Button variant="text" onClick={sendUnlockRequest}>
-                Restore
-              </Button>
-            )}
-          </>
-        ) : (
-          ""
-        )}
-      </div>
+            <IconButton sx={{ color: "black" }} color="inherit">
+              <LockIcon />
+            </IconButton>
+          )
+        }
+      >
+        <ListItemAvatar>
+          <Avatar sx={{ backgroundColor: "black" }} color="inherit">
+            <ContactMailIcon sx={{ color: "white" }} color="inherit" />
+          </Avatar>
+        </ListItemAvatar>
+        <ListItemText primary={friendData?.userName} />
+      </ListItem>
 
       <Snackbar
         open={isDeleteRequestSent}
@@ -103,6 +157,58 @@ export default function Conversation({
         }}
         message="Recovery Request Sent! Please Check your email."
       />
+      <Snackbar
+        open={isSuccessRemoveConversation}
+        autoHideDuration={6000}
+        onClose={() => {
+          console.log("");
+        }}
+        message="Conversation Deleted!"
+      />
+
+      <Dialog
+        open={isDeleteOpen}
+        onClose={() => {
+          setIsDeleteOpen(false);
+        }}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {deleted
+            ? "Recover the deleted conversation"
+            : "Delete this conversation"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {`Are you sure you want to ${
+              deleted ? "recover" : "delete"
+            } this conversation?`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setIsDeleteOpen(false);
+            }}
+          >
+            No
+          </Button>
+          <Button
+            onClick={() => {
+              deleted
+                ? sendUnlockRequest()
+                : removeConversationMutation({
+                    conversationId: conversationData._id,
+                    userId: user.id,
+                  });
+            }}
+            autoFocus
+          >
+            Yes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }
