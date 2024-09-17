@@ -146,7 +146,10 @@ export default function Conversation({
             <ContactMailIcon sx={{ color: "white" }} color="inherit" />
           </Avatar>
         </ListItemAvatar>
-        <ListItemText primary={friendData?.userName} />
+        <ListItemText
+          primary={friendData?.userName}
+          sx={{ fontWeight: "bold" }}
+        />
       </ListItem>
 
       <Snackbar

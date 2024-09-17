@@ -29,8 +29,14 @@ import { encryptMessage } from "../../utils";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import Snackbar from "@mui/material/Snackbar";
 import { useNavigate } from "react-router-dom";
+
+import Fab from "@mui/material/Fab";
+import AddIcon from "@mui/icons-material/Add";
+
+import Paper from "@mui/material/Paper";
 
 const HomeScreen = () => {
   const currentDateTime = dayjs();
@@ -230,7 +236,16 @@ const HomeScreen = () => {
     setMessageText("");
   }, [isSuccessMessage]);
 
+  const [isEmptyMsg, setIsEmptyMsg] = useState(false);
+
   const sendMessage = (messageAttributes) => {
+    if (messageText === "") {
+      setIsEmptyMsg(true);
+      return;
+    }
+
+    setIsEmptyMsg(false);
+
     const { type, funcAttributes } = messageAttributes;
 
     // Encrypt the message using conversationId as the secretKey
@@ -276,11 +291,6 @@ const HomeScreen = () => {
           funcAttributes: funcAttributes,
         },
       };
-    }
-
-    if (!messagePayload) {
-      alert("Please enter a message.");
-      return;
     }
 
     // API Call
@@ -376,7 +386,13 @@ const HomeScreen = () => {
                 className="create-conv-btn"
                 onClick={openCreateConversationModal}
               >
-                <span className="material-symbols-outlined">edit_square</span>
+                <Fab
+                  variant="extended"
+                  sx={{ backgroundColorL: "transparent" }}
+                >
+                  <AddIcon />
+                </Fab>
+                {/* <span className="material-symbols-outlined">edit_square</span> */}
               </button>
             </div>
 
@@ -401,7 +417,17 @@ const HomeScreen = () => {
                       {allUsers?.map((user) => {
                         return (
                           <li className="list-group-item" key={user?._id}>
-                            <Button
+                            <Fab
+                              variant="extended"
+                              size="small"
+                              color="inherit"
+                              sx={{ color: "black" }}
+                              onClick={() => handleCreateConversation(user)}
+                            >
+                              <AddIcon sx={{ mr: 1 }} />
+                              Chat with {user?.userName} &nbsp;&nbsp;
+                            </Fab>
+                            {/* <Button
                               variant="outlined"
                               onClick={() => handleCreateConversation(user)}
                             >
@@ -409,7 +435,7 @@ const HomeScreen = () => {
                               <span style={{ fontSize: "10px" }}>
                                 ({user?.email})
                               </span>
-                            </Button>
+                            </Button> */}
                           </li>
                         );
                       })}
@@ -539,6 +565,7 @@ const HomeScreen = () => {
             {/* Unlock Conversation Modal */}
           </div>
         </div>
+
         <div className="chatBox">
           {!isUnlocked || selectedConversation == null ? (
             <WelcomeMessage />
@@ -554,6 +581,7 @@ const HomeScreen = () => {
                   );
                 })}
               </div>
+
               <hr />
               <div className="chatBoxBottom">
                 <textarea
@@ -583,6 +611,17 @@ const HomeScreen = () => {
                 >
                   Send Limited View Time Message
                 </button>
+
+                <Snackbar
+                  anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                  open={isEmptyMsg}
+                  autoHideDuration={6000}
+                  onClose={() => {
+                    setIsEmptyMsg(false);
+                  }}
+                  message="Please Enter a Message!"
+                />
+
                 {/* <!-- Send Limited View Time Message Modal --> */}
                 <div
                   className="modal fade"
