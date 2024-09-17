@@ -68,3 +68,14 @@ body {
     border-style: solid;
     border-width: 1px;
 }
+
+.signup-link {
+    color: #212529;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.signup-link:hover {
+    color: #212529;
+    text-decoration: underline;
+}
