@@ -27,19 +27,17 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
 export default function Conversation({
-  isOnline,
   onClick,
   conversationData,
   deleted,
   unlockedConversationsList,
+  isOnline,
 }) {
   const { members } = conversationData;
 
   const { user } = useContext(AuthContext);
 
   const otherMemberId = members.find((member) => member !== user?.id);
-
-  console.log("unlocke vonc list in conv", unlockedConversationsList);
 
   const [showDeleteIcon, setShowDeleteIcon] = useState(false);
 
@@ -147,7 +145,8 @@ export default function Conversation({
           </Avatar>
         </ListItemAvatar>
         <ListItemText
-          primary={friendData?.userName}
+          primary={`${friendData?.userName} ${isOnline ? "  ●  " : ""}`}
+          // secondary={isOnline ? "Online" : "Offline"}
           sx={{ fontWeight: "bold" }}
         />
       </ListItem>
