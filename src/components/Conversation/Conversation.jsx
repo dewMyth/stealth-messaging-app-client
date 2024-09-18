@@ -37,7 +37,7 @@ export default function Conversation({
 
   const { user } = useContext(AuthContext);
 
-  const otherMemberId = members.find((member) => member !== user.id);
+  const otherMemberId = members.find((member) => member !== user?.id);
 
   console.log("unlocke vonc list in conv", unlockedConversationsList);
 
@@ -73,7 +73,7 @@ export default function Conversation({
   const sendUnlockRequest = () => {
     const data = {
       conversationId: conversationData._id,
-      userId: user.id,
+      userId: user?.id,
     };
     sendUnlockConversation(data);
   };
@@ -203,7 +203,7 @@ export default function Conversation({
                 ? sendUnlockRequest()
                 : removeConversationMutation({
                     conversationId: conversationData._id,
-                    userId: user.id,
+                    userId: user?.id,
                   });
             }}
             autoFocus

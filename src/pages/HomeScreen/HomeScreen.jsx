@@ -101,7 +101,7 @@ const HomeScreen = () => {
     const unlockData = {
       conversationId: selectedConversation._id,
       enteredPIN: code.join(""),
-      userId: user.id,
+      userId: user?.id,
     };
     if (!unlockData) {
       alert("Please enter a valid PIN");
@@ -184,12 +184,12 @@ const HomeScreen = () => {
 
   const handleCreateConversation = (member) => {
     const conveMembers = {
-      members: [user.id, member._id],
+      members: [user?.id, member._id],
     };
     if (conveMembers) {
       createConversationMutate(conveMembers);
     } else {
-      alert("Please select a user.");
+      alert("Please select a user?.");
     }
 
     // Additional logic for creating the conversation
@@ -259,7 +259,7 @@ const HomeScreen = () => {
     if (type === "STANDARD") {
       messagePayload = {
         text: encryptedMessageText,
-        senderId: user.id,
+        senderId: user?.id,
         conversationId: selectedConversation._id,
         messageType: {
           messageFunc: 0,
@@ -273,7 +273,7 @@ const HomeScreen = () => {
     if (type === "SELF_DESTRUCT_TIMED") {
       messagePayload = {
         text: encryptedMessageText,
-        senderId: user.id,
+        senderId: user?.id,
         conversationId: selectedConversation._id,
         messageType: {
           messageFunc: 1,
@@ -284,7 +284,7 @@ const HomeScreen = () => {
     if (type === "LIMITED_VIEW_TIME") {
       messagePayload = {
         text: encryptedMessageText,
-        senderId: user.id,
+        senderId: user?.id,
         conversationId: selectedConversation._id,
         messageType: {
           messageFunc: 2,
@@ -360,7 +360,10 @@ const HomeScreen = () => {
 
   const handleDelete = (conv) => {
     if (selectedConversation) {
-      removeConversationMutation({ conversationId: conv._id, userId: user.id });
+      removeConversationMutation({
+        conversationId: conv._id,
+        userId: user?.id,
+      });
       setAnchorEl(null);
     }
   };
@@ -573,7 +576,7 @@ const HomeScreen = () => {
             <div className="chatBoxWrapper">
               <div className="chatBoxTop">
                 {messagesByConversation?.messages?.map((message) => {
-                  const isOwn = message.senderId === user.id;
+                  const isOwn = message.senderId === user?.id;
                   return (
                     <div ref={srcollRef}>
                       <Message own={isOwn} message={message} />

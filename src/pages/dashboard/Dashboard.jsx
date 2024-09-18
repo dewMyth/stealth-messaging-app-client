@@ -153,7 +153,7 @@ export default function Dashboard() {
             >
               <Button
                 onClick={() =>
-                  exportToExcel(exportRows, `Log Export - ${user.userName}`)
+                  exportToExcel(exportRows, `Log Export - ${user?.userName}`)
                 }
                 variant="contained"
                 color="primary"
