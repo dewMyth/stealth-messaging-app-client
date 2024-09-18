@@ -23,7 +23,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
-import { encryptMessage } from "../../utils";
+import { encryptMessage, getOtherConvMember } from "../../utils";
 
 // mUI
 import Button from "@mui/material/Button";
@@ -38,14 +38,32 @@ import AddIcon from "@mui/icons-material/Add";
 
 import Paper from "@mui/material/Paper";
 
+// Socket
+
+import { io } from "socket.io-client";
+
 const HomeScreen = () => {
+  const { user, isFetching, error, dispatch } = useContext(AuthContext);
+  const socket = useRef();
+
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
+  useEffect(() => {
+    socket.current = io("ws://localhost:8900");
+  }, []);
+
+  useEffect(() => {
+    socket.current.emit("addUser", user?.id);
+    socket.current.on("onlineUserList", (onlineUsers) => {
+      setOnlineUsers(onlineUsers.map((ou) => ou.userId));
+    });
+  }, [user]);
+
   const currentDateTime = dayjs();
 
   const navigate = useNavigate();
 
   const srcollRef = useRef();
-
-  const { user, isFetching, error, dispatch } = useContext(AuthContext);
 
   const [isUnlocked, setIsUnlocked] = useState(true);
 
@@ -468,6 +486,12 @@ const HomeScreen = () => {
             />
             <div className="chat-item-list mt-3">
               {allConversationsByUser?.conversations?.map((conv) => {
+                // Get other memberId
+                const otherMemberId = getOtherConvMember(
+                  conv?.members,
+                  user?.id
+                );
+
                 return (
                   <div
                     onClick={() => {
@@ -480,6 +504,7 @@ const HomeScreen = () => {
                         // onClick={openUnlockConversationModal}
                         conversationData={conv}
                         unlockedConversationsList={unlockedConversationsList}
+                        isOnline={onlineUsers.includes(otherMemberId)}
                       />
                     </div>
                   </div>
