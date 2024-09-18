@@ -32,7 +32,7 @@ export default function Header() {
                   mark_unread_chat_alt
                 </span>
                 <span className="px-2">
-                  Stealth Messaging App ( {user.userName} )
+                  Stealth Messaging App ( {user?.userName} )
                 </span>
               </div>
             </div>

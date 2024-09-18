@@ -29,8 +29,14 @@ import { encryptMessage } from "../../utils";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import Snackbar from "@mui/material/Snackbar";
 import { useNavigate } from "react-router-dom";
+
+import Fab from "@mui/material/Fab";
+import AddIcon from "@mui/icons-material/Add";
+
+import Paper from "@mui/material/Paper";
 
 const HomeScreen = () => {
   const currentDateTime = dayjs();
@@ -95,7 +101,7 @@ const HomeScreen = () => {
     const unlockData = {
       conversationId: selectedConversation._id,
       enteredPIN: code.join(""),
-      userId: user.id,
+      userId: user?.id,
     };
     if (!unlockData) {
       alert("Please enter a valid PIN");
@@ -178,12 +184,12 @@ const HomeScreen = () => {
 
   const handleCreateConversation = (member) => {
     const conveMembers = {
-      members: [user.id, member._id],
+      members: [user?.id, member._id],
     };
     if (conveMembers) {
       createConversationMutate(conveMembers);
     } else {
-      alert("Please select a user.");
+      alert("Please select a user?.");
     }
 
     // Additional logic for creating the conversation
@@ -230,7 +236,16 @@ const HomeScreen = () => {
     setMessageText("");
   }, [isSuccessMessage]);
 
+  const [isEmptyMsg, setIsEmptyMsg] = useState(false);
+
   const sendMessage = (messageAttributes) => {
+    if (messageText === "") {
+      setIsEmptyMsg(true);
+      return;
+    }
+
+    setIsEmptyMsg(false);
+
     const { type, funcAttributes } = messageAttributes;
 
     // Encrypt the message using conversationId as the secretKey
@@ -244,7 +259,7 @@ const HomeScreen = () => {
     if (type === "STANDARD") {
       messagePayload = {
         text: encryptedMessageText,
-        senderId: user.id,
+        senderId: user?.id,
         conversationId: selectedConversation._id,
         messageType: {
           messageFunc: 0,
@@ -258,7 +273,7 @@ const HomeScreen = () => {
     if (type === "SELF_DESTRUCT_TIMED") {
       messagePayload = {
         text: encryptedMessageText,
-        senderId: user.id,
+        senderId: user?.id,
         conversationId: selectedConversation._id,
         messageType: {
           messageFunc: 1,
@@ -269,18 +284,13 @@ const HomeScreen = () => {
     if (type === "LIMITED_VIEW_TIME") {
       messagePayload = {
         text: encryptedMessageText,
-        senderId: user.id,
+        senderId: user?.id,
         conversationId: selectedConversation._id,
         messageType: {
           messageFunc: 2,
           funcAttributes: funcAttributes,
         },
       };
-    }
-
-    if (!messagePayload) {
-      alert("Please enter a message.");
-      return;
     }
 
     // API Call
@@ -350,7 +360,10 @@ const HomeScreen = () => {
 
   const handleDelete = (conv) => {
     if (selectedConversation) {
-      removeConversationMutation({ conversationId: conv._id, userId: user.id });
+      removeConversationMutation({
+        conversationId: conv._id,
+        userId: user?.id,
+      });
       setAnchorEl(null);
     }
   };
@@ -376,7 +389,13 @@ const HomeScreen = () => {
                 className="create-conv-btn"
                 onClick={openCreateConversationModal}
               >
-                <span className="material-symbols-outlined">edit_square</span>
+                <Fab
+                  variant="extended"
+                  sx={{ backgroundColorL: "transparent" }}
+                >
+                  <AddIcon />
+                </Fab>
+                {/* <span className="material-symbols-outlined">edit_square</span> */}
               </button>
             </div>
 
@@ -401,7 +420,17 @@ const HomeScreen = () => {
                       {allUsers?.map((user) => {
                         return (
                           <li className="list-group-item" key={user?._id}>
-                            <Button
+                            <Fab
+                              variant="extended"
+                              size="small"
+                              color="inherit"
+                              sx={{ color: "black" }}
+                              onClick={() => handleCreateConversation(user)}
+                            >
+                              <AddIcon sx={{ mr: 1 }} />
+                              Chat with {user?.userName} &nbsp;&nbsp;
+                            </Fab>
+                            {/* <Button
                               variant="outlined"
                               onClick={() => handleCreateConversation(user)}
                             >
@@ -409,7 +438,7 @@ const HomeScreen = () => {
                               <span style={{ fontSize: "10px" }}>
                                 ({user?.email})
                               </span>
-                            </Button>
+                            </Button> */}
                           </li>
                         );
                       })}
@@ -437,56 +466,27 @@ const HomeScreen = () => {
               id="search"
               placeholder="Search for a chat"
             />
-            {allConversationsByUser?.conversations?.map((conv) => {
-              return (
-                <div
-                  className="chat-list-item"
-                  onClick={() => {
-                    openUnlockConversationModal(conv);
-                  }}
-                >
-                  <Conversation
-                    key={conv.id}
-                    // onClick={openUnlockConversationModal}
-                    conversationData={conv}
-                  />
-
-                  <div>
-                    <Button
-                      id="basic-button"
-                      aria-controls={open ? "basic-menu" : undefined}
-                      aria-haspopup="true"
-                      aria-expanded={open ? "true" : undefined}
-                      onClick={handleClick}
-                    >
-                      <span
-                        class="material-symbols-outlined"
-                        style={{ color: "black" }}
-                      >
-                        more_vert
-                      </span>
-                    </Button>
-                    <Menu
-                      id="basic-menu"
-                      anchorEl={anchorEl}
-                      open={open}
-                      onClose={() => setAnchorEl(null)}
-                      MenuListProps={{
-                        "aria-labelledby": "basic-button",
-                      }}
-                    >
-                      <MenuItem onClick={() => handleDelete(conv)}>
-                        Delete
-                      </MenuItem>
-                    </Menu>
+            <div className="chat-item-list mt-3">
+              {allConversationsByUser?.conversations?.map((conv) => {
+                return (
+                  <div
+                    onClick={() => {
+                      openUnlockConversationModal(conv);
+                    }}
+                  >
+                    <div className="chat-item m-2">
+                      <Conversation
+                        key={conv.id}
+                        // onClick={openUnlockConversationModal}
+                        conversationData={conv}
+                        unlockedConversationsList={unlockedConversationsList}
+                      />
+                    </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* <button className="btn">
-                    <span class="material-symbols-outlined">more_vert</span>
-                  </button> */}
-                </div>
-              );
-            })}
             {/* Unlock Conversation Modal */}
             <div
               className="modal fade"
@@ -568,6 +568,7 @@ const HomeScreen = () => {
             {/* Unlock Conversation Modal */}
           </div>
         </div>
+
         <div className="chatBox">
           {!isUnlocked || selectedConversation == null ? (
             <WelcomeMessage />
@@ -575,7 +576,7 @@ const HomeScreen = () => {
             <div className="chatBoxWrapper">
               <div className="chatBoxTop">
                 {messagesByConversation?.messages?.map((message) => {
-                  const isOwn = message.senderId === user.id;
+                  const isOwn = message.senderId === user?.id;
                   return (
                     <div ref={srcollRef}>
                       <Message own={isOwn} message={message} />
@@ -583,6 +584,7 @@ const HomeScreen = () => {
                   );
                 })}
               </div>
+
               <hr />
               <div className="chatBoxBottom">
                 <textarea
@@ -612,6 +614,17 @@ const HomeScreen = () => {
                 >
                   Send Limited View Time Message
                 </button>
+
+                <Snackbar
+                  anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                  open={isEmptyMsg}
+                  autoHideDuration={6000}
+                  onClose={() => {
+                    setIsEmptyMsg(false);
+                  }}
+                  message="Please Enter a Message!"
+                />
+
                 {/* <!-- Send Limited View Time Message Modal --> */}
                 <div
                   className="modal fade"

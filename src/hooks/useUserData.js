@@ -84,7 +84,7 @@ const getAllUsers = async (currentUser) => {
   } else {
     if (currentUser) {
       const userIndex = response.data.findIndex(
-        (user) => user._id === currentUser
+        (user) => user?._id === currentUser
       );
       if (userIndex > -1) {
         response.data.splice(userIndex, 1); // Remove the current user from the list to avoid duplication

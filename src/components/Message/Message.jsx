@@ -24,6 +24,8 @@ export default function Message({ own, message }) {
         return isBadWord ? "%@^&!#" : word;
       });
 
+      console.log("dec msg", decryptedText);
+
       setFilteredText(updatedText || []);
     },
     { message }

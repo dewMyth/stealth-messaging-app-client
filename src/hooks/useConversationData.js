@@ -210,3 +210,20 @@ export const useRecoverConversation = () => {
     },
   });
 };
+
+const getLastThreeDaysMessageCount = async (userId) => {
+  console.log("3 datas", userId);
+  const response = await axios.get(
+    baseUrl + `messages/get-messages-for-last-three-days/${userId}`
+  );
+  return response.data;
+};
+
+export const useGetLastThreeDaysMessageCount = (userId) => {
+  return useQuery({
+    queryKey: ["lastThreeDaysMessageCount"],
+    queryFn: () => getLastThreeDaysMessageCount(userId),
+    refetchInterval: 60000, // refetch every minute
+    enabled: !!userId,
+  });
+};

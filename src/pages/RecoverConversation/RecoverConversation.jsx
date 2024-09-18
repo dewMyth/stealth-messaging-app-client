@@ -49,7 +49,7 @@ export default function RecoverConversation() {
     const data = {
       conversationId: conversationId,
       verificationCode: constructedCode,
-      userId: user.id,
+      userId: user?.id,
     };
 
     console.log(data);

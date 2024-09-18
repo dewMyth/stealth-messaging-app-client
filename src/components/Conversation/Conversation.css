@@ -10,6 +10,11 @@
     background-color: rgb(245, 243, 243);
 }
 
+.chat-item:hover{
+    background-color: rgb(243, 242, 242);
+    border-radius: 20px;
+}
+
 
 
 .conversationImg {
