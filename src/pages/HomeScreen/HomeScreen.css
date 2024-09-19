@@ -13,6 +13,15 @@
     /* background-color: red; */
 }
 
+@media only screen and (max-width: 1000px) {
+    .chatMenu {
+        flex: 1.5;
+    }
+    .chatBox {
+        flex: 3.5;
+    }
+}
+
 
 .chatBoxWrapper {
    display: flex;
