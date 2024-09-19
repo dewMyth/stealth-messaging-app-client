@@ -26,3 +26,8 @@ export const decryptMessage = (encryptedText, secretKey) => {
   ).toString(CryptoJS.enc.Utf8);
   return decryptedMessage;
 };
+
+export const getOtherConvMember = (membersArr, member) => {
+  const otherMemberId = membersArr.find((m) => m !== member);
+  return otherMemberId;
+};

@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from "react";
 import "./Message.css";
 import { decryptMessage, formatEpochToDate } from "../../utils";
+import { useGetUserById } from "../../hooks/useUserData";
 
-export default function Message({ own, message }) {
-  const { text, isActive, messageType, conversationId } = message;
+export default function Message({
+  own,
+  message,
+  isSenderOnline,
+  otherMemberId,
+}) {
+  const { text, isActive, messageType, conversationId, senderId } = message;
   const { messageFunc, funcAttributes } = messageType;
   const { to, from } = funcAttributes;
 
   const [filteredText, setFilteredText] = useState([]);
+  const [isStealthMode, setIsStealthMode] = useState([]);
 
   const badWordRepo = ["dog", "animal", "bad"];
 
@@ -51,13 +58,22 @@ export default function Message({ own, message }) {
 
     // Cleanup the interval on component unmount
     return () => clearInterval(intervalId);
-  }, []);
+  }, [currentTime]);
 
   const [emoji, setEmoji] = useState("");
 
-  // useEffect(() => {
+  const {
+    data: friendData,
+    isLoading: isLoadingOtherUserData,
+    isSuccess: isSuccessOtherUserData,
+    isError: isErrorOtherUserData,
+  } = useGetUserById(senderId);
 
-  // }, [text]);
+  useEffect(() => {
+    if (isSuccessOtherUserData) {
+      setIsStealthMode(friendData?.isStealthMode);
+    }
+  }, [isSuccessOtherUserData]);
 
   const iconStyle = {
     color: own ? "black" : "white",
@@ -93,49 +109,58 @@ export default function Message({ own, message }) {
     }
   }, []);
 
+  // Is StealthMode ON & the user is not ONLINE
+  const isStealthModeAndUserNotOnline = isStealthMode && !isSenderOnline;
+
   return (
-    <div className={own ? "message own" : "message"}>
-      <div className="messageText">
-        {isActive ? (
-          filteredText.join(" ")
-        ) : (
-          <span>
-            <i>This message is restricted</i>
-          </span>
-        )}
-        <span
-          className="emoji"
-          style={{
-            fontSize: "5px", // Smaller circle
-            verticalAlign: "middle", // Align with text
-            marginLeft: "5px", // Optional: spacing between text and circle
-          }}
-        >
-          <button
-            messageFunc="button"
-            className="custom-btn"
-            data-bs-toggle="popover"
-            data-bs-title={
-              messageFunc === "LIMITED_VIEW_TIME"
-                ? "Limited View Time"
-                : "Self Destructive Message"
-            }
-            data-bs-content={
-              messageFunc === "LIMITED_VIEW_TIME"
-                ? `This message wiil be visible only from ${formatEpochToDate(
-                    from
-                  )} to ${formatEpochToDate(to)}`
-                : `This message will be deleted in ${
-                    to - currentTime > 0
-                      ? `${to - currentTime} in seconds`
-                      : `${Math.abs(to - currentTime)} seconds ago`
-                  }`
-            }
-          >
-            {emoji}
-          </button>
-        </span>
-      </div>
-    </div>
+    <>
+      {isStealthModeAndUserNotOnline ? (
+        <div className="restrictedMessage"></div>
+      ) : (
+        <div className={own ? "message own" : "message"}>
+          <div className="messageText">
+            {isActive ? (
+              filteredText.join(" ")
+            ) : (
+              <span>
+                <i>This message is restricted</i>
+              </span>
+            )}
+            <span
+              className="emoji"
+              style={{
+                fontSize: "5px", // Smaller circle
+                verticalAlign: "middle", // Align with text
+                marginLeft: "5px", // Optional: spacing between text and circle
+              }}
+            >
+              <button
+                messageFunc="button"
+                className="custom-btn"
+                data-bs-toggle="popover"
+                data-bs-title={
+                  messageFunc === "LIMITED_VIEW_TIME"
+                    ? "Limited View Time"
+                    : "Self Destructive Message"
+                }
+                data-bs-content={
+                  messageFunc === "LIMITED_VIEW_TIME"
+                    ? `This message wiil be visible only from ${formatEpochToDate(
+                        from
+                      )} to ${formatEpochToDate(to)}`
+                    : `This message will be deleted in ${
+                        to - currentTime > 0
+                          ? `${to - currentTime} in seconds`
+                          : `${Math.abs(to - currentTime)} seconds ago`
+                      }`
+                }
+              >
+                {emoji}
+              </button>
+            </span>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

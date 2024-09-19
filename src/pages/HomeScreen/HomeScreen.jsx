@@ -16,14 +16,14 @@ import {
   useUnlockConversation,
 } from "../../hooks/useConversationData";
 import ContactIcon from "../../assets/contact";
-import { useGetAllUsers } from "../../hooks/useUserData";
+import { useGetAllUsers, useGetUserById } from "../../hooks/useUserData";
 
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
-import { encryptMessage } from "../../utils";
+import { encryptMessage, getOtherConvMember } from "../../utils";
 
 // mUI
 import Button from "@mui/material/Button";
@@ -36,16 +36,40 @@ import { useNavigate } from "react-router-dom";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
 
+import CheckIcon from "@mui/icons-material/Check";
+
 import Paper from "@mui/material/Paper";
 
+// Socket
+
+import { io } from "socket.io-client";
+
+import Alert from "@mui/material/Alert";
+
 const HomeScreen = () => {
+  const { user, isFetching, error, dispatch } = useContext(AuthContext);
+  const socket = useRef();
+
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
+  useEffect(() => {
+    socket.current = io("ws://localhost:8900");
+  }, []);
+
+  useEffect(() => {
+    socket.current.emit("addUser", user?.id);
+    socket.current.on("onlineUserList", (onlineUsers) => {
+      setOnlineUsers(onlineUsers.map((ou) => ou.userId));
+    });
+  }, [user]);
+
+  const [isStealthMode, setIsStealthMode] = useState(true);
+
   const currentDateTime = dayjs();
 
   const navigate = useNavigate();
 
   const srcollRef = useRef();
-
-  const { user, isFetching, error, dispatch } = useContext(AuthContext);
 
   const [isUnlocked, setIsUnlocked] = useState(true);
 
@@ -57,6 +81,12 @@ const HomeScreen = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
 
   const [code, setCode] = useState(new Array(6).fill(""));
+
+  useEffect(() => {
+    if (selectedConversation) {
+      setCode(new Array(6).fill(""));
+    }
+  }, [selectedConversation]);
 
   const unlockConvModalRef = useRef(null);
 
@@ -375,6 +405,32 @@ const HomeScreen = () => {
     }
   }, [isSuccessRemoveConversation, selectedConversation]);
 
+  const [friendId, setFriendId] = useState(null);
+
+  const {
+    data: selectedFriendData,
+    isLoading: isLoadingSelectedFriendData,
+    isSuccess: isSuccessSelectedFriendData,
+    isError: isErrorSelectedFriendData,
+  } = useGetUserById(friendId);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      let otherMemberId = selectedConversation?.members.filter(
+        (member) => member !== user?.id
+      );
+      setFriendId(otherMemberId);
+    }
+  }, [selectedConversation, friendId]);
+
+  const [isSelectedConvStealthMode, setIsSelectedConvStealthMode] =
+    useState(false);
+  useEffect(() => {
+    if (selectedConversation && isSuccessSelectedFriendData) {
+      setIsSelectedConvStealthMode(selectedFriendData?.isStealthMode);
+    }
+  }, [isSuccessSelectedFriendData]);
+
   return (
     <div>
       {/* Header */}
@@ -468,6 +524,12 @@ const HomeScreen = () => {
             />
             <div className="chat-item-list mt-3">
               {allConversationsByUser?.conversations?.map((conv) => {
+                // Get other memberId
+                const otherMemberId = getOtherConvMember(
+                  conv?.members,
+                  user?.id
+                );
+
                 return (
                   <div
                     onClick={() => {
@@ -480,6 +542,7 @@ const HomeScreen = () => {
                         // onClick={openUnlockConversationModal}
                         conversationData={conv}
                         unlockedConversationsList={unlockedConversationsList}
+                        isOnline={onlineUsers.includes(otherMemberId)}
                       />
                     </div>
                   </div>
@@ -517,7 +580,7 @@ const HomeScreen = () => {
                     </p>
                     <form onSubmit={handleUnlockPINSubmit}>
                       <div className="code-inputs mb-3">
-                        {code.map((digit, index) => (
+                        {code?.map((digit, index) => (
                           <input
                             key={index}
                             type="text"
@@ -579,13 +642,25 @@ const HomeScreen = () => {
                   const isOwn = message.senderId === user?.id;
                   return (
                     <div ref={srcollRef}>
-                      <Message own={isOwn} message={message} />
+                      <Message
+                        own={isOwn}
+                        message={message}
+                        isStealthMode={isStealthMode}
+                        isSenderOnline={onlineUsers.includes(message?.senderId)}
+                      />
                     </div>
                   );
                 })}
               </div>
 
               <hr />
+
+              {isSelectedConvStealthMode && isUnlocked && (
+                <Alert severity="info">
+                  {selectedFriendData?.userName} has tunerd on STEALTH MODE!!!
+                </Alert>
+              )}
+
               <div className="chatBoxBottom">
                 <textarea
                   name=""
