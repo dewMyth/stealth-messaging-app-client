@@ -104,6 +104,7 @@
     cursor: pointer;
     background-color: #212529;
     color: white;
+    transition: background-color 400ms ease;
 }
 
 .chatMenu,
